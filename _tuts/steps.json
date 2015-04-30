@@ -1,0 +1,55 @@
+{
+    "steps": [
+        {
+            "id": "start",
+            "name": "start",
+            "description": null
+        },
+        {
+            "id": "move-move-files-from-src-appbundle-to-app",
+            "name": "Move: Move files from src\/AppBundle to app",
+            "description": null
+        },
+        {
+            "id": "move-add-psr-4-namespace-to-composer-json",
+            "name": "Move: Add PSR-4 namespace to composer.json",
+            "description": null
+        },
+        {
+            "id": "move-update-namespaces-to-app-keep-the-bundle",
+            "name": "Move: Update namespaces to App, keep the bundle",
+            "description": null
+        },
+        {
+            "id": "move-update-phpunit-xml-dist",
+            "name": "Move: Update phpunit.xml.dist",
+            "description": null
+        },
+        {
+            "id": "3-0-moving-things-into-the-3-0-directory-structure",
+            "name": "3.0: Moving things into the 3.0 directory structure",
+            "description": null
+        },
+        {
+            "id": "no-bundle-delete-appbundle",
+            "name": "No Bundle: Delete AppBundle",
+            "description": null
+        },
+        {
+            "id": "no-bundle-change-routing-import",
+            "name": "No Bundle: Change routing import",
+            "description": null
+        },
+        {
+            "id": "no-bundle-removing-controller-usage",
+            "name": "No Bundle: Removing _controller usage",
+            "description": null
+        },
+        {
+            "id": "no-bundle-register-an-app-styled-entity-namespace",
+            "name": "No Bundle: Register an App:-styled entity namespace",
+            "description": null
+        }
+    ],
+    "sha": "0a1c24f6619853ed91640f72033828231e91aa60"
+}

@@ -1,0 +1,4680 @@
+diff --git a/app/AppBundle.php b/app/AppBundle.php
+new file mode 100644
+index 0000000..0058860
+--- /dev/null
++++ b/app/AppBundle.php
+@@ -0,0 +1,43 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle;
++
++use Symfony\Component\HttpKernel\Bundle\Bundle;
++
++/**
++ * This class is the one that transforms the src/AppBundle/ directory into a real
++ * Symfony bundle. There are two types of bundles:
++ *
++ *   * Reusable Bundles: they are meant to be shared between different applications.
++ *     A lot of them are even publicly available in sites like packagist.org.
++ *     See http://symfony.com/doc/current/cookbook/bundles/best_practices.html
++ *   * Application bundles: they are never shared, not even with other of your
++ *     applications. This allows them to be less strict in some conventions and
++ *     their code is usually simpler.
++ *     See http://symfony.com/doc/current/best_practices/business-logic.html
++ *
++ * The AppBundle is an application bundle that is already created when you install
++ * Symfony. Using AppBundle to start developing your Symfony application is
++ * considered a good practice, but you can also split your application code into
++ * as many bundles as you want.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class AppBundle extends Bundle
++{
++    // At first it's common to leave this class empty, but when the application grows,
++    // you may need to add some initialization code in the boot() method.
++    //
++    // Checkout the Symfony\Component\HttpKernel\Bundle\Bundle class to see all
++    // the available methods for bundles.
++}
+diff --git a/app/Command/AddUserCommand.php b/app/Command/AddUserCommand.php
+new file mode 100644
+index 0000000..6b13664
+--- /dev/null
++++ b/app/Command/AddUserCommand.php
+@@ -0,0 +1,274 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Command;
++
++use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
++use Symfony\Component\Console\Input\InputArgument;
++use Symfony\Component\Console\Input\InputInterface;
++use Symfony\Component\Console\Input\InputOption;
++use Symfony\Component\Console\Output\OutputInterface;
++use Symfony\Component\Console\Question\Question;
++use Doctrine\Common\Persistence\ObjectManager;
++use AppBundle\Entity\User;
++
++/**
++ * A command console that creates users and stores them in the database.
++ * To use this command, open a terminal window, enter into your project
++ * directory and execute the following:
++ *
++ *     $ php app/console app:add-user
++ *
++ * To output detailed information, increase the command verbosity:
++ *
++ *     $ php app/console app:add-user -vv
++ *
++ * See http://symfony.com/doc/current/cookbook/console/console_command.html
++ *
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class AddUserCommand extends ContainerAwareCommand
++{
++    const MAX_ATTEMPTS = 5;
++
++    /**
++     * @var ObjectManager
++     */
++    private $em;
++
++    protected function configure()
++    {
++        $this
++            // a good practice is to use the 'app:' prefix to group all your custom application commands
++            ->setName('app:add-user')
++            ->setDescription('Creates users and stores them in the database')
++            ->setHelp($this->getCommandHelp())
++            // commands can optionally define arguments and/or options (mandatory and optional)
++            // see http://symfony.com/doc/current/components/console/console_arguments.html
++            ->addArgument('username', InputArgument::OPTIONAL, 'The username of the new user')
++            ->addArgument('password', InputArgument::OPTIONAL, 'The plain password of the new user')
++            ->addArgument('email', InputArgument::OPTIONAL, 'The email of the new user')
++            ->addOption('is-admin', null, InputOption::VALUE_NONE, 'If set, the user is created as an administrator')
++        ;
++    }
++
++    /**
++     * This method is executed before initialize() and execute(). Its purpose is
++     * to check if some of the options/arguments are missing and interactively
++     * ask the user for those values.
++     *
++     * This method is completely optional. If you are developing an internal console
++     * command, you probably should not implement this method because it requires
++     * quite a lot of work. However, if the command is meant to be used by external
++     * users, this method is a nice way to fall back and prevent errors.
++     */
++    protected function interact(InputInterface $input, OutputInterface $output)
++    {
++        if (null !== $input->getArgument('username') && null !== $input->getArgument('password') && null !== $input->getArgument('email')) {
++            return;
++        }
++
++        // multi-line messages can be displayed this way...
++        $output->writeln('');
++        $output->writeln('Add User Command Interactive Wizard');
++        $output->writeln('-----------------------------------');
++
++        // ...but you can also pass an array of strings to the writeln() method
++        $output->writeln(array(
++            '',
++            'If you prefer to not use this interactive wizard, provide the',
++            'arguments required by this command as follows:',
++            '',
++            ' $ php app/console app:add-user username password email@example.com',
++            '',
++        ));
++
++        $output->writeln(array(
++            '',
++            'Now we\'ll ask you for the value of all the missing command arguments.',
++            '',
++        ));
++
++        // See http://symfony.com/doc/current/components/console/helpers/questionhelper.html
++        $console = $this->getHelper('question');
++
++        // Ask for the username if it's not defined
++        $username = $input->getArgument('username');
++        if (null === $username) {
++            $question = new Question(' > <info>Username</info>: ');
++            $question->setValidator(function ($answer) {
++                if (empty($answer)) {
++                    throw new \RuntimeException('The username cannot be empty');
++                }
++
++                return $answer;
++            });
++            $question->setMaxAttempts(self::MAX_ATTEMPTS);
++
++            $username = $console->ask($input, $output, $question);
++            $input->setArgument('username', $username);
++        } else {
++            $output->writeln(' > <info>Username</info>: '.$username);
++        }
++
++        // Ask for the password if it's not defined
++        $password = $input->getArgument('password');
++        if (null === $password) {
++            $question = new Question(' > <info>Password</info> (your type will be hidden): ');
++            $question->setValidator(array($this, 'passwordValidator'));
++            $question->setHidden(true);
++            $question->setMaxAttempts(self::MAX_ATTEMPTS);
++
++            $password = $console->ask($input, $output, $question);
++            $input->setArgument('password', $password);
++        } else {
++            $output->writeln(' > <info>Password</info>: '.str_repeat('*', strlen($password)));
++        }
++
++        // Ask for the email if it's not defined
++        $email = $input->getArgument('email');
++        if (null === $email) {
++            $question = new Question(' > <info>Email</info>: ');
++            $question->setValidator(array($this, 'emailValidator'));
++            $question->setMaxAttempts(self::MAX_ATTEMPTS);
++
++            $email = $console->ask($input, $output, $question);
++            $input->setArgument('email', $email);
++        } else {
++            $output->writeln(' > <info>Email</info>: '.$email);
++        }
++    }
++
++    /**
++     * This method is executed before the interact() and the execute() methods.
++     * It's main purpose is to initialize the variables used in the rest of the
++     * command methods.
++     */
++    protected function initialize(InputInterface $input, OutputInterface $output)
++    {
++        $this->em = $this->getContainer()->get('doctrine')->getManager();
++    }
++
++    /**
++     * This method is executed after interact() and initialize(). It usually
++     * contains the logic to execute to complete this command task.
++     */
++    protected function execute(InputInterface $input, OutputInterface $output)
++    {
++        $startTime = microtime(true);
++
++        $username = $input->getArgument('username');
++        $plainPassword = $input->getArgument('password');
++        $email = $input->getArgument('email');
++        $isAdmin = $input->getOption('is-admin');
++
++        // first check if a user with the same username already exists
++        $existingUser = $this->em->getRepository('AppBundle:User')->findOneBy(array('username' => $username));
++
++        if (null !== $existingUser) {
++            throw new \RuntimeException(sprintf('There is already a user registered with the "%s" username.', $username));
++        }
++
++        // create the user and encode its password
++        $user = new User();
++        $user->setUsername($username);
++        $user->setEmail($email);
++        $user->setRoles(array($isAdmin ? 'ROLE_ADMIN' : 'ROLE_USER'));
++
++        // See http://symfony.com/doc/current/book/security.html#security-encoding-password
++        $encoder = $this->getContainer()->get('security.password_encoder');
++        $encodedPassword = $encoder->encodePassword($user, $plainPassword);
++        $user->setPassword($encodedPassword);
++
++        $this->em->persist($user);
++        $this->em->flush($user);
++
++        $output->writeln('');
++        $output->writeln(sprintf('[OK] %s was successfully created: %s (%s)', $isAdmin ? 'Administrator user' : 'User', $user->getUsername(), $user->getEmail()));
++
++        if ($output->isVerbose()) {
++            $finishTime = microtime(true);
++            $elapsedTime = $finishTime - $startTime;
++
++            $output->writeln(sprintf('[INFO] New user database id: %d / Elapsed time: %.2f ms', $user->getId(), $elapsedTime*1000));
++        }
++    }
++
++    /**
++     * This internal method should be private, but it's declared as public to
++     * maintain PHP 5.3 compatibility when using it in a callback.
++     *
++     * @internal
++     */
++    public function passwordValidator($plainPassword)
++    {
++        if (empty($plainPassword)) {
++            throw new \Exception('The password can not be empty');
++        }
++
++        if (strlen(trim($plainPassword)) < 6) {
++            throw new \Exception('The password must be at least 6 characters long');
++        }
++
++        return $plainPassword;
++    }
++
++    /**
++     * This internal method should be private, but it's declared as public to
++     * maintain PHP 5.3 compatibility when using it in a callback.
++     *
++     * @internal
++     */
++    public function emailValidator($email)
++    {
++        if (empty($email)) {
++            throw new \Exception('The email can not be empty');
++        }
++
++        if (false === strpos($email, '@')) {
++            throw new \Exception('The email should look like a real email');
++        }
++
++        return $email;
++    }
++
++    /**
++     * The command help is usually included in the configure() method, but when
++     * it's too long, it's better to define a separate method to maintain the
++     * code readability.
++     */
++    private function getCommandHelp()
++    {
++        return <<<HELP
++The <info>%command.name%</info> command creates new users and saves them in the database:
++
++  <info>php %command.full_name%</info> <comment>username password email</comment>
++
++By default the command creates regular users. To create administrator users,
++add the <comment>--is-admin</comment> option:
++
++  <info>php %command.full_name%</info> username password email <comment>--is-admin</comment>
++
++If you omit any of the three required arguments, the command will ask you to
++provide the missing values:
++
++  # command will ask you for the email
++  <info>php %command.full_name%</info> <comment>username password</comment>
++
++  # command will ask you for the email and password
++  <info>php %command.full_name%</info> <comment>username</comment>
++
++  # command will ask you for all arguments
++  <info>php %command.full_name%</info>
++
++HELP;
++    }
++}
+diff --git a/app/Command/ListUsersCommand.php b/app/Command/ListUsersCommand.php
+new file mode 100644
+index 0000000..4cd1bbc
+--- /dev/null
++++ b/app/Command/ListUsersCommand.php
+@@ -0,0 +1,138 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Command;
++
++use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
++use Symfony\Component\Console\Helper\Table;
++use Symfony\Component\Console\Input\InputInterface;
++use Symfony\Component\Console\Input\InputOption;
++use Symfony\Component\Console\Output\OutputInterface;
++use Symfony\Component\Console\Output\BufferedOutput;
++
++/**
++ * A command console that lists all the existing users. To use this command, open
++ * a terminal window, enter into your project directory and execute the following:
++ *
++ *     $ php app/console app:list-users
++ *
++ * See http://symfony.com/doc/current/cookbook/console/console_command.html
++ *
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class ListUsersCommand extends ContainerAwareCommand
++{
++    /**
++     * @var ObjectManager
++     */
++    private $em;
++
++    protected function configure()
++    {
++        $this
++            // a good practice is to use the 'app:' prefix to group all your custom application commands
++            ->setName('app:list-users')
++            ->setDescription('Lists all the existing users')
++            ->setHelp(<<<HELP
++The <info>%command.name%</info> command lists all the users registered in the application:
++
++  <info>php %command.full_name%</info>
++
++By default the command only displays the 50 most recent users. Set the number of
++results to display with the <comment>--max-results</comment> option:
++
++  <info>php %command.full_name%</info> <comment>--max-results=2000</comment>
++
++In addition to displaying the user list, you can also send this information to
++the email address specified in the <comment>--send-to</comment> option:
++
++  <info>php %command.full_name%</info> <comment>--send-to=fabien@symfony.com</comment>
++
++HELP
++            )
++            // commands can optionally define arguments and/or options (mandatory and optional)
++            // see http://symfony.com/doc/current/components/console/console_arguments.html
++            ->addOption('max-results', null, InputOption::VALUE_OPTIONAL, 'Limits the number of users listed', 50)
++            ->addOption('send-to', null, InputOption::VALUE_OPTIONAL, 'If set, the result is sent to the given email address')
++        ;
++    }
++
++    /**
++     * This method is executed before the the execute() method. It's main purpose
++     * is to initialize the variables used in the rest of the command methods.
++     */
++    protected function initialize(InputInterface $input, OutputInterface $output)
++    {
++        $this->em = $this->getContainer()->get('doctrine')->getManager();
++    }
++
++    /**
++     * This method is executed after initialize(). It usually contains the logic
++     * to execute to complete this command task.
++     */
++    protected function execute(InputInterface $input, OutputInterface $output)
++    {
++        $maxResults = $input->getOption('max-results');
++        // Use ->findBy() instead of ->findAll() to allow result sorting and limiting
++        $users = $this->em->getRepository('AppBundle:User')->findBy(array(), array('id' => 'DESC'), $maxResults);
++
++        // Doctrine query returns an array of objects and we need an array of plain arrays
++        $usersAsPlainArrays = array_map(function ($user) {
++            return array($user->getId(), $user->getUsername(), $user->getEmail(), implode(', ', $user->getRoles()));
++        }, $users);
++
++        // In your console commands you should always use the regular output type,
++        // which outputs contents directly in the console window. However, this
++        // particular command uses the BufferedOutput type instead.
++        // The reason is that the table displaying the list of users can be sent
++        // via email if the '--send-to' option is provided. Instead of complicating
++        // things, the BufferedOutput allows to get the command output and store
++        // it in a variable before displaying it.
++        $bufferedOutput = new BufferedOutput();
++
++        $table = new Table($bufferedOutput);
++        $table
++            ->setHeaders(array('ID', 'Username', 'Email', 'Roles'))
++            ->setRows($usersAsPlainArrays)
++        ;
++        $table->render();
++
++        // instead of displaying the table of users, store it in a variable
++        $tableContents = $bufferedOutput->fetch();
++
++        if (null !== $email = $input->getOption('send-to')) {
++            $this->sendReport($tableContents, $email);
++        }
++
++        $output->writeln($tableContents);
++    }
++
++    /**
++     * Sends the given $contents to the $recipient email address.
++     *
++     * @param string $contents
++     * @param string $recipient
++     */
++    private function sendReport($contents, $recipient)
++    {
++        // See http://symfony.com/doc/current/cookbook/email/email.html
++        $mailer = $this->getContainer()->get('mailer');
++
++        $message = $mailer->createMessage()
++            ->setSubject(sprintf('app:list-users report (%s)', date('Y-m-d H:i:s')))
++            ->setFrom($this->getContainer()->getParameter('app.notifications.email_sender'))
++            ->setTo($recipient)
++            ->setBody($contents, 'text/plain')
++        ;
++
++        $mailer->send($message);
++    }
++}
+diff --git a/app/Controller/Admin/BlogController.php b/app/Controller/Admin/BlogController.php
+new file mode 100644
+index 0000000..841d6e9
+--- /dev/null
++++ b/app/Controller/Admin/BlogController.php
+@@ -0,0 +1,191 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Controller\Admin;
++
++use AppBundle\Form\PostType;
++use Symfony\Component\HttpFoundation\Request;
++use Symfony\Bundle\FrameworkBundle\Controller\Controller;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
++use AppBundle\Entity\Post;
++
++/**
++ * Controller used to manage blog contents in the backend.
++ *
++ * @Route("/admin/post")
++ * @Security("has_role('ROLE_ADMIN')")
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class BlogController extends Controller
++{
++    /**
++     * Lists all Post entities.
++     *
++     * This controller responds to two different routes with the same URL:
++     *   * 'admin_post_index' is the route with a name that follows the same
++     *     structure as the rest of the controllers of this class.
++     *   * 'admin_index' is a nice shortcut to the backend homepage. This allows
++     *     to create simpler links in the templates. Moreover, in the future we
++     *     could move this annotation to any other controller while maintaining
++     *     the route name and therefore, without breaking any existing link.
++     *
++     * @Route("/", name="admin_index")
++     * @Route("/", name="admin_post_index")
++     * @Method("GET")
++     */
++    public function indexAction()
++    {
++        $em = $this->getDoctrine()->getManager();
++        $posts = $em->getRepository('AppBundle:Post')->findAll();
++
++        return $this->render('admin/blog/index.html.twig', array('posts' => $posts));
++    }
++    
++    /**
++     * Creates a new Post entity.
++     *
++     * @Route("/new", name="admin_post_new")
++     * @Method({"GET", "POST"})
++     *
++     * NOTE: the Method annotation is optional, but it's a recommended practice
++     * to constraint the HTTP methods each controller responds to (by default
++     * it responds to all methods).
++     */
++    public function newAction(Request $request)
++    {
++        $post = new Post();
++        $post->setAuthorEmail($this->getUser()->getEmail());
++        $form = $this->createForm(new PostType(), $post);
++
++        $form->handleRequest($request);
++
++        // the isSubmitted() method is completely optional because the other
++        // isValid() method already checks whether the form is submitted.
++        // However, we explicitly add it to improve code readability.
++        // See http://symfony.com/doc/current/best_practices/forms.html#handling-form-submits
++        if ($form->isSubmitted() && $form->isValid()) {
++            $post->setSlug($this->get('slugger')->slugify($post->getTitle()));
++
++            $em = $this->getDoctrine()->getManager();
++            $em->persist($post);
++            $em->flush();
++
++            return $this->redirectToRoute('admin_post_index');
++        }
++
++        return $this->render('admin/blog/new.html.twig', array(
++            'post' => $post,
++            'form' => $form->createView(),
++        ));
++    }
++
++    /**
++     * Finds and displays a Post entity.
++     *
++     * @Route("/{id}", requirements={"id" = "\d+"}, name="admin_post_show")
++     * @Method("GET")
++     * @Security("post.isAuthor(user)")
++     *
++     * NOTE: You can also centralize security logic by using a "voter"
++     * See http://symfony.com/doc/current/cookbook/security/voters_data_permission.html
++     */
++    public function showAction(Post $post)
++    {
++        $deleteForm = $this->createDeleteForm($post);
++
++        return $this->render('admin/blog/show.html.twig', array(
++            'post'        => $post,
++            'delete_form' => $deleteForm->createView(),
++        ));
++    }
++
++    /**
++     * Displays a form to edit an existing Post entity.
++     *
++     * @Route("/{id}/edit", requirements={"id" = "\d+"}, name="admin_post_edit")
++     * @Method({"GET", "POST"})
++     * @Security("post.isAuthor(user)")
++     */
++    public function editAction(Post $post, Request $request)
++    {
++        $em = $this->getDoctrine()->getManager();
++
++        $editForm = $this->createForm(new PostType(), $post);
++        $deleteForm = $this->createDeleteForm($post);
++
++        $editForm->handleRequest($request);
++
++        if ($editForm->isSubmitted() && $editForm->isValid()) {
++            $post->setSlug($this->get('slugger')->slugify($post->getTitle()));
++            $em->flush();
++
++            return $this->redirectToRoute('admin_post_edit', array('id' => $post->getId()));
++        }
++
++        return $this->render('admin/blog/edit.html.twig', array(
++            'post'        => $post,
++            'edit_form'   => $editForm->createView(),
++            'delete_form' => $deleteForm->createView(),
++        ));
++    }
++
++    /**
++     * Deletes a Post entity.
++     *
++     * @Route("/{id}", name="admin_post_delete")
++     * @Method("DELETE")
++     * @Security("post.isAuthor(user)")
++     *
++     * The Security annotation value is an expression (if it evaluates to false,
++     * the authorization mechanism will prevent the user accessing this resource).
++     * The isAuthor() method is defined in the AppBundle\Entity\Post entity.
++     */
++    public function deleteAction(Request $request, Post $post)
++    {
++        $form = $this->createDeleteForm($post);
++        $form->handleRequest($request);
++
++        if ($form->isSubmitted() && $form->isValid()) {
++            $em = $this->getDoctrine()->getManager();
++
++            $em->remove($post);
++            $em->flush();
++        }
++
++        return $this->redirectToRoute('admin_post_index');
++    }
++
++    /**
++     * Creates a form to delete a Post entity by id.
++     *
++     * This is necessary because browsers don't support HTTP methods different
++     * from GET and POST. Since the controller that removes the blog posts expects
++     * a DELETE method, the trick is to create a simple form that *fakes* the
++     * HTTP DELETE method.
++     * See http://symfony.com/doc/current/cookbook/routing/method_parameters.html.
++     *
++     * @param Post $post The post object
++     *
++     * @return \Symfony\Component\Form\Form The form
++     */
++    private function createDeleteForm(Post $post)
++    {
++        return $this->createFormBuilder()
++            ->setAction($this->generateUrl('admin_post_delete', array('id' => $post->getId())))
++            ->setMethod('DELETE')
++            ->getForm()
++        ;
++    }
++}
+diff --git a/app/Controller/BlogController.php b/app/Controller/BlogController.php
+new file mode 100644
+index 0000000..fa3a7ba
+--- /dev/null
++++ b/app/Controller/BlogController.php
+@@ -0,0 +1,130 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Controller;
++
++use Symfony\Bundle\FrameworkBundle\Controller\Controller;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
++use Symfony\Component\HttpFoundation\Request;
++use Symfony\Component\HttpFoundation\Response;
++use AppBundle\Entity\Post;
++use AppBundle\Entity\Comment;
++use AppBundle\Form\CommentType;
++
++/**
++ * Controller used to manage blog contents in the public part of the site.
++ *
++ * @Route("/blog")
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class BlogController extends Controller
++{
++    /**
++     * @Route("/", name="blog_index")
++     */
++    public function indexAction()
++    {
++        $em = $this->getDoctrine()->getManager();
++        $posts = $em->getRepository('AppBundle:Post')->findLatest();
++
++        return $this->render('blog/index.html.twig', array('posts' => $posts));
++    }
++
++    /**
++     * @Route("/posts/{slug}", name="blog_post")
++     *
++     * NOTE: The $post controller argument is automatically injected by Symfony
++     * after performing a database query looking for a Post with the 'slug'
++     * value given in the route.
++     * See http://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
++     */
++    public function postShowAction(Post $post)
++    {
++        return $this->render('blog/post_show.html.twig', array('post' => $post));
++    }
++
++    /**
++     * @Route("/comment/{postSlug}/new", name = "comment_new")
++     * @Security("is_granted('IS_AUTHENTICATED_FULLY')")
++     *
++     * @Method("POST")
++     * @ParamConverter("post", options={"mapping": {"postSlug": "slug"}})
++     *
++     * NOTE: The ParamConverter mapping is required because the route parameter
++     * (postSlug) doesn't match any of the Doctrine entity properties (slug).
++     * See http://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html#doctrine-converter
++     */
++    public function commentNewAction(Request $request, Post $post)
++    {
++        $form = $this->createCommentForm();
++
++        $form->handleRequest($request);
++
++        if ($form->isSubmitted() && $form->isValid()) {
++            /** @var Comment $comment */
++            $comment = $form->getData();
++            $comment->setAuthorEmail($this->getUser()->getEmail());
++            $comment->setPost($post);
++            $comment->setPublishedAt(new \DateTime());
++
++            $em = $this->getDoctrine()->getManager();
++            $em->persist($comment);
++            $em->flush();
++
++            return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
++        }
++
++        return $this->render('blog/comment_form_error.html.twig', array(
++            'post' => $post,
++            'form' => $form->createView(),
++        ));
++    }
++
++    /**
++     * This controller is called directly via the render() function in the
++     * blog/post_show.html.twig template. That's why it's not needed to define
++     * a route name for it.
++     *
++     * The "id" of the Post is passed in and then turned into a Post object
++     * automatically by the ParamConverter.
++     *
++     * @param Post $post
++     *
++     * @return Response
++     */
++    public function commentFormAction(Post $post)
++    {
++        $form = $this->createCommentForm();
++
++        return $this->render('blog/comment_form.html.twig', array(
++            'post' => $post,
++            'form' => $form->createView(),
++        ));
++    }
++
++    /**
++     * This is a utility method used to create comment forms. It's recommended
++     * to not define this kind of methods in a controller class, but sometimes
++     * is convenient for defining small methods.
++     */
++    private function createCommentForm()
++    {
++        $form = $this->createForm(new CommentType());
++        $form->add('submit', 'submit', array('label' => 'Create'));
++
++        return $form;
++    }
++}
+diff --git a/app/Controller/SecurityController.php b/app/Controller/SecurityController.php
+new file mode 100644
+index 0000000..e203bd8
+--- /dev/null
++++ b/app/Controller/SecurityController.php
+@@ -0,0 +1,67 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Controller;
++
++use Symfony\Bundle\FrameworkBundle\Controller\Controller;
++use Symfony\Component\HttpFoundation\Request;
++use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
++
++/**
++ * Controller used to manage the application security.
++ * See http://symfony.com/doc/current/cookbook/security/form_login_setup.html.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class SecurityController extends Controller
++{
++    /**
++     * @Route("/login", name="security_login_form")
++     */
++    public function loginAction()
++    {
++        $helper = $this->get('security.authentication_utils');
++
++        return $this->render('security/login.html.twig', array(
++            // last username entered by the user (if any)
++            'last_username' => $helper->getLastUsername(),
++            // last authentication error (if any)
++            'error' => $helper->getLastAuthenticationError(),
++        ));
++    }
++
++    /**
++     * This is the route the login form submits to.
++     *
++     * But, this will never be executed. Symfony will intercept this first
++     * and handle the login automatically. See form_login in app/config/security.yml
++     *
++     * @Route("/login_check", name="security_login_check")
++     */
++    public function loginCheckAction()
++    {
++        throw new \Exception('This should never be reached!');
++    }
++
++    /**
++     * This is the route the user can use to logout.
++     *
++     * But, this will never be executed. Symfony will intercept this first
++     * and handle the logout automatically. See logout in app/config/security.yml
++     *
++     * @Route("/logout", name="security_logout")
++     */
++    public function logoutAction()
++    {
++        throw new \Exception('This should never be reached!');
++    }
++}
+diff --git a/app/DataFixtures/ORM/LoadFixtures.php b/app/DataFixtures/ORM/LoadFixtures.php
+new file mode 100644
+index 0000000..43d99de
+--- /dev/null
++++ b/app/DataFixtures/ORM/LoadFixtures.php
+@@ -0,0 +1,186 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\DataFixtures\ORM;
++
++use AppBundle\Entity\User;
++use AppBundle\Entity\Post;
++use AppBundle\Entity\Comment;
++use Doctrine\Common\DataFixtures\FixtureInterface;
++use Doctrine\Common\Persistence\ObjectManager;
++use Symfony\Component\DependencyInjection\ContainerAwareInterface;
++use Symfony\Component\DependencyInjection\ContainerInterface;
++
++/**
++ * Defines the sample data to load in the database when executing this command:
++ *   $ php app/console doctrine:fixtures:load
++ *
++ * See http://symfony.com/doc/current/bundles/DoctrineFixturesBundle/index.html
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class LoadFixtures implements FixtureInterface, ContainerAwareInterface
++{
++    /** @var ContainerInterface */
++    private $container;
++
++    public function load(ObjectManager $manager)
++    {
++        $this->loadUsers($manager);
++        $this->loadPosts($manager);
++    }
++
++    private function loadUsers(ObjectManager $manager)
++    {
++        $passwordEncoder = $this->container->get('security.password_encoder');
++
++        $johnUser = new User();
++        $johnUser->setUsername('john_user');
++        $johnUser->setEmail('john_user@symfony.com');
++        $encodedPassword = $passwordEncoder->encodePassword($johnUser, 'kitten');
++        $johnUser->setPassword($encodedPassword);
++        $manager->persist($johnUser);
++
++        $annaAdmin = new User();
++        $annaAdmin->setUsername('anna_admin');
++        $annaAdmin->setEmail('anna_admin@symfony.com');
++        $annaAdmin->setRoles(array('ROLE_ADMIN'));
++        $encodedPassword = $passwordEncoder->encodePassword($annaAdmin, 'kitten');
++        $annaAdmin->setPassword($encodedPassword);
++        $manager->persist($annaAdmin);
++
++        $manager->flush();
++    }
++
++    private function loadPosts(ObjectManager $manager)
++    {
++        foreach (range(1, 10) as $i) {
++            $post = new Post();
++
++            $post->setTitle($this->getRandomPostTitle());
++            $post->setSummary($this->getRandomPostSummary());
++            $post->setSlug($this->container->get('slugger')->slugify($post->getTitle()));
++            $post->setContent($this->getPostContent());
++            $post->setAuthorEmail('anna_admin@symfony.com');
++            $post->setPublishedAt(new \DateTime('now - '.$i.'days'));
++
++            foreach (range(1, 5) as $j) {
++                $comment = new Comment();
++
++                $comment->setAuthorEmail('john_user@symfony.com');
++                $comment->setPublishedAt(new \DateTime('now + '.($i + $j).'seconds'));
++                $comment->setContent($this->getRandomCommentContent());
++                $comment->setPost($post);
++
++                $manager->persist($comment);
++                $post->addComment($comment);
++            }
++
++            $manager->persist($post);
++        }
++
++        $manager->flush();
++    }
++
++    public function setContainer(ContainerInterface $container = null)
++    {
++        $this->container = $container;
++    }
++
++    private function getPostContent()
++    {
++        return <<<MARKDOWN
++Lorem ipsum dolor sit amet consectetur adipisicing elit, sed do eiusmod tempor
++incididunt ut labore et **dolore magna aliqua**: Duis aute irure dolor in
++reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
++Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
++deserunt mollit anim id est laborum.
++
++  * Ut enim ad minim veniam
++  * Quis nostrud exercitation *ullamco laboris*
++  * Nisi ut aliquip ex ea commodo consequat
++
++Praesent id fermentum lorem. Ut est lorem, fringilla at accumsan nec, euismod at
++nunc. Aenean mattis sollicitudin mattis. Nullam pulvinar vestibulum bibendum.
++Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
++himenaeos. Fusce nulla purus, gravida ac interdum ut, blandit eget ex. Duis a
++luctus dolor.
++
++Integer auctor massa maximus nulla scelerisque accumsan. *Aliquam ac malesuada*
++ex. Pellentesque tortor magna, vulputate eu vulputate ut, venenatis ac lectus.
++Praesent ut lacinia sem. Mauris a lectus eget felis mollis feugiat. Quisque
++efficitur, mi ut semper pulvinar, urna urna blandit massa, eget tincidunt augue
++nulla vitae est.
++
++Ut posuere aliquet tincidunt. Aliquam erat volutpat. **Class aptent taciti**
++sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Morbi
++arcu orci, gravida eget aliquam eu, suscipit et ante. Morbi vulputate metus vel
++ipsum finibus, ut dapibus massa feugiat. Vestibulum vel lobortis libero. Sed
++tincidunt tellus et viverra scelerisque. Pellentesque tincidunt cursus felis.
++Sed in egestas erat.
++
++Aliquam pulvinar interdum massa, vel ullamcorper ante consectetur eu. Vestibulum
++lacinia ac enim vel placerat. Integer pulvinar magna nec dui malesuada, nec
++congue nisl dictum. Donec mollis nisl tortor, at congue erat consequat a. Nam
++tempus elit porta, blandit elit vel, viverra lorem. Sed sit amet tellus
++tincidunt, faucibus nisl in, aliquet libero.
++MARKDOWN;
++    }
++
++    private function getPhrases()
++    {
++        return array(
++            'Lorem ipsum dolor sit amet consectetur adipiscing elit',
++            'Pellentesque vitae velit ex',
++            'Mauris dapibus risus quis suscipit vulputate',
++            'Eros diam egestas libero eu vulputate risus',
++            'In hac habitasse platea dictumst',
++            'Morbi tempus commodo mattis',
++            'Ut suscipit posuere justo at vulputate',
++            'Ut eleifend mauris et risus ultrices egestas',
++            'Aliquam sodales odio id eleifend tristique',
++            'Urna nisl sollicitudin id varius orci quam id turpis',
++            'Nulla porta lobortis ligula vel egestas',
++            'Curabitur aliquam euismod dolor non ornare',
++            'Sed varius a risus eget aliquam',
++            'Nunc viverra elit ac laoreet suscipit',
++            'Pellentesque et sapien pulvinar consectetur',
++        );
++    }
++
++    private function getRandomPostTitle()
++    {
++        $titles = $this->getPhrases();
++
++        return $titles[array_rand($titles)];
++    }
++
++    private function getRandomPostSummary()
++    {
++        $phrases = $this->getPhrases();
++
++        $numPhrases = rand(6, 12);
++        shuffle($phrases);
++
++        return implode(' ', array_slice($phrases, 0, $numPhrases-1));
++    }
++
++    private function getRandomCommentContent()
++    {
++        $phrases = $this->getPhrases();
++
++        $numPhrases = rand(2, 15);
++        shuffle($phrases);
++
++        return implode(' ', array_slice($phrases, 0, $numPhrases-1));
++    }
++}
+diff --git a/app/Entity/Comment.php b/app/Entity/Comment.php
+new file mode 100644
+index 0000000..1db8ce1
+--- /dev/null
++++ b/app/Entity/Comment.php
+@@ -0,0 +1,123 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Entity;
++
++use Doctrine\ORM\Mapping as ORM;
++use Symfony\Component\Validator\Constraints as Assert;
++
++/**
++ * @ORM\Entity
++ *
++ * Defines the properties of the Comment entity to represent the blog comments.
++ * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
++ *
++ * Tip: if you have an existing database, you can generate these entity class automatically.
++ * See http://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class Comment
++{
++    /**
++     * @ORM\Id
++     * @ORM\GeneratedValue
++     * @ORM\Column(type="integer")
++     */
++    private $id;
++
++    /**
++     * @ORM\ManyToOne(targetEntity="Post", inversedBy="comments")
++     * @ORM\JoinColumn(nullable=false)
++     */
++    private $post;
++
++    /**
++     * @ORM\Column(type="text")
++     * @assert\NotBlank(message="Please don't leave your comment blank!")
++     * @Assert\Length(
++     *     min = "5",
++     *     minMessage = "Comment is too short ({{ limit }} characters minimum)",
++     *     max = "10000",
++     *     maxMessage = "Comment is too long ({{ limit }} characters maximum)"
++     * )
++     */
++    private $content;
++
++    /**
++     * @ORM\Column(type="string")
++     * @Assert\Email()
++     */
++    private $authorEmail;
++
++    /**
++     * @ORM\Column(type="datetime")
++     * @Assert\DateTime()
++     */
++    private $publishedAt;
++
++    public function __construct()
++    {
++        $this->publishedAt = new \DateTime();
++    }
++
++    /**
++     * @Assert\True(message = "The content of this comment is considered spam.")
++     */
++    public function isLegitComment()
++    {
++        $containsInvalidCharacters = false !== strpos($this->content, '@');
++
++        return !$containsInvalidCharacters;
++    }
++
++    public function getId()
++    {
++        return $this->id;
++    }
++
++    public function getContent()
++    {
++        return $this->content;
++    }
++    public function setContent($content)
++    {
++        $this->content = $content;
++    }
++
++    public function getAuthorEmail()
++    {
++        return $this->authorEmail;
++    }
++    public function setAuthorEmail($authorEmail)
++    {
++        $this->authorEmail = $authorEmail;
++    }
++
++    public function getPublishedAt()
++    {
++        return $this->publishedAt;
++    }
++    public function setPublishedAt($publishedAt)
++    {
++        $this->publishedAt = $publishedAt;
++    }
++
++    public function getPost()
++    {
++        return $this->post;
++    }
++    public function setPost(Post $post = null)
++    {
++        $this->post = $post;
++    }
++}
+diff --git a/app/Entity/Post.php b/app/Entity/Post.php
+new file mode 100644
+index 0000000..3abefec
+--- /dev/null
++++ b/app/Entity/Post.php
+@@ -0,0 +1,184 @@
++<?php
++
++namespace AppBundle\Entity;
++
++use Doctrine\ORM\Mapping as ORM;
++use Doctrine\Common\Collections\ArrayCollection;
++use Symfony\Component\Validator\Constraints as Assert;
++
++/**
++ * @ORM\Entity(repositoryClass="AppBundle\Repository\PostRepository")
++ *
++ * Defines the properties of the Post entity to represent the blog posts.
++ * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
++ *
++ * Tip: if you have an existing database, you can generate these entity class automatically.
++ * See http://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class Post
++{
++    /**
++     * Use constants to define configuration options that rarely change instead
++     * of specifying them in app/config/config.yml.
++     * See http://symfony.com/doc/current/best_practices/configuration.html#constants-vs-configuration-options
++     */
++    const NUM_ITEMS = 10;
++
++    /**
++     * @ORM\Id
++     * @ORM\GeneratedValue
++     * @ORM\Column(type="integer")
++     */
++    private $id;
++
++    /**
++     * @ORM\Column(type="string")
++     * @Assert\NotBlank()
++     */
++    private $title;
++
++    /**
++     * @ORM\Column(type="string")
++     */
++    private $slug;
++
++    /**
++     * @ORM\Column(type="string")
++     * @Assert\NotBlank(message="Give your post a summary!")
++     */
++    private $summary;
++
++    /**
++     * @ORM\Column(type="text")
++     * @Assert\Length(
++     *     min = "10",
++     *     minMessage = "Post content is too short ({{ limit }} characters minimum)"
++     * )
++     */
++    private $content;
++
++    /**
++     * @ORM\Column(type="string")
++     * @Assert\Email()
++     */
++    private $authorEmail;
++
++    /**
++     * @ORM\Column(type="datetime")
++     * @Assert\DateTime()
++     */
++    private $publishedAt;
++
++    /**
++     * @ORM\OneToMany(
++     *      targetEntity="Comment",
++     *      mappedBy="post",
++     *      orphanRemoval=true
++     * )
++     * @ORM\OrderBy({"publishedAt" = "DESC"})
++     */
++    private $comments;
++
++    public function __construct()
++    {
++        $this->publishedAt = new \DateTime();
++        $this->comments = new ArrayCollection();
++    }
++
++    public function getId()
++    {
++        return $this->id;
++    }
++
++    public function getTitle()
++    {
++        return $this->title;
++    }
++
++    public function setTitle($title)
++    {
++        $this->title = $title;
++    }
++
++    public function getSlug()
++    {
++        return $this->slug;
++    }
++
++    public function setSlug($slug)
++    {
++        $this->slug = $slug;
++    }
++
++    public function getContent()
++    {
++        return $this->content;
++    }
++
++    public function setContent($content)
++    {
++        $this->content = $content;
++    }
++
++    public function getAuthorEmail()
++    {
++        return $this->authorEmail;
++    }
++
++    public function setAuthorEmail($authorEmail)
++    {
++        $this->authorEmail = $authorEmail;
++    }
++
++    /**
++     * Is the given User the author of this Post?
++     *
++     * @param User $user
++     *
++     * @return bool
++     */
++    public function isAuthor(User $user = null)
++    {
++        return $user->getEmail() == $this->getAuthorEmail();
++    }
++
++    public function getPublishedAt()
++    {
++        return $this->publishedAt;
++    }
++
++    public function setPublishedAt($publishedAt)
++    {
++        $this->publishedAt = $publishedAt;
++    }
++
++    public function getComments()
++    {
++        return $this->comments;
++    }
++
++    public function addComment(Comment $comment)
++    {
++        $this->comments->add($comment);
++        $comment->setPost($this);
++    }
++
++    public function removeComment(Comment $comments)
++    {
++        $this->comments->removeElement($comments);
++        $comments->setPost(null);
++    }
++
++    public function getSummary()
++    {
++        return $this->summary;
++    }
++
++    public function setSummary($summary)
++    {
++        $this->summary = $summary;
++    }
++}
+diff --git a/app/Entity/User.php b/app/Entity/User.php
+new file mode 100644
+index 0000000..6cfa3c4
+--- /dev/null
++++ b/app/Entity/User.php
+@@ -0,0 +1,121 @@
++<?php
++
++namespace AppBundle\Entity;
++
++use Doctrine\ORM\Mapping as ORM;
++use Symfony\Component\Security\Core\User\UserInterface;
++
++/**
++ * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
++ *
++ * Defines the properties of the User entity to represent the application users.
++ * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
++ *
++ * Tip: if you have an existing database, you can generate these entity class automatically.
++ * See http://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class User implements UserInterface
++{
++    /**
++     * @ORM\Id
++     * @ORM\GeneratedValue
++     * @ORM\Column(type="integer")
++     */
++    private $id;
++
++    /**
++     * @ORM\Column(type="string", unique=true)
++     */
++    private $username;
++
++    /**
++     * @ORM\Column(type="string", unique=true)
++     */
++    private $email;
++
++    /**
++     * @ORM\Column(type="string")
++     */
++    private $password;
++
++    /**
++     * @ORM\Column(type="json_array")
++     */
++    private $roles = array();
++
++    public function getId()
++    {
++        return $this->id;
++    }
++
++    public function getUsername()
++    {
++        return $this->username;
++    }
++    public function setUsername($username)
++    {
++        $this->username = $username;
++    }
++
++    public function getEmail()
++    {
++        return $this->email;
++    }
++    public function setEmail($email)
++    {
++        $this->email = $email;
++    }
++
++    public function getPassword()
++    {
++        return $this->password;
++    }
++    public function setPassword($password)
++    {
++        $this->password = $password;
++    }
++
++    /**
++     * Returns the roles or permissions granted to the user for security.
++     */
++    public function getRoles()
++    {
++        $roles = $this->roles;
++
++        // guarantees that a user always has at least one role for security
++        if (empty($roles)) {
++            $roles[] = 'ROLE_USER';
++        }
++
++        return array_unique($roles);
++    }
++
++    public function setRoles($roles)
++    {
++        $this->roles = $roles;
++    }
++
++    /**
++     * Returns the salt that was originally used to encode the password.
++     */
++    public function getSalt()
++    {
++        // See "Do you need to use a Salt?" at http://symfony.com/doc/current/cookbook/security/entity_provider.html
++        // we're using bcrypt in security.yml to encode the password, so
++        // the salt value is built-in and you don't have to generate one
++
++        return;
++    }
++
++    /**
++     * Removes sensitive data from the user.
++     */
++    public function eraseCredentials()
++    {
++        // if you had a plainPassword property, you'd nullify it here
++        // $this->plainPassword = null;
++    }
++}
+diff --git a/app/EventListener/ControllerListener.php b/app/EventListener/ControllerListener.php
+new file mode 100644
+index 0000000..d57cdf9
+--- /dev/null
++++ b/app/EventListener/ControllerListener.php
+@@ -0,0 +1,48 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\EventListener;
++
++use Symfony\Component\HttpKernel\HttpKernelInterface;
++use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
++use AppBundle\Twig\SourceCodeExtension;
++
++/**
++ * Defines the method that 'listens' to the 'kernel.controller' event, which is
++ * triggered whenever a controller is executed in the application.
++ * See http://symfony.com/doc/current/book/internals.html#kernel-controller-event
++ *
++ * Tip: listeners are common in Symfony applications, but this particular listener
++ * is too advanced and too specific for the demo application needs. For more common
++ * examples see http://symfony.com/doc/current/cookbook/service_container/event_listener.html
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class ControllerListener
++{
++    protected $twigExtension;
++
++    public function __construct(SourceCodeExtension $twigExtension)
++    {
++        $this->twigExtension = $twigExtension;
++    }
++
++    public function registerCurrentController(FilterControllerEvent $event)
++    {
++        // this check is needed because in Symfony a request can perform any
++        // number of sub-requests. See
++        // http://symfony.com/doc/current/components/http_kernel/introduction.html#sub-requests
++        if (HttpKernelInterface::MASTER_REQUEST === $event->getRequestType()) {
++            $this->twigExtension->setController($event->getController());
++        }
++    }
++}
+diff --git a/app/Form/CommentType.php b/app/Form/CommentType.php
+new file mode 100644
+index 0000000..2c15df0
+--- /dev/null
++++ b/app/Form/CommentType.php
+@@ -0,0 +1,57 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Form;
++
++use Symfony\Component\Form\AbstractType;
++use Symfony\Component\Form\FormBuilderInterface;
++use Symfony\Component\OptionsResolver\OptionsResolverInterface;
++
++/**
++ * Defines the form used to create and manipulate blog comments. Although in this
++ * case the form is trivial and we could build it inside the controller, a good
++ * practice is to always define your forms as classes.
++ * See http://symfony.com/doc/current/book/forms.html#creating-form-classes
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class CommentType extends AbstractType
++{
++    /**
++     * @param FormBuilderInterface $builder
++     * @param array                $options
++     */
++    public function buildForm(FormBuilderInterface $builder, array $options)
++    {
++        $builder
++            ->add('content')
++        ;
++    }
++
++    /**
++     * @param OptionsResolverInterface $resolver
++     */
++    public function setDefaultOptions(OptionsResolverInterface $resolver)
++    {
++        $resolver->setDefaults(array(
++            'data_class' => 'AppBundle\Entity\Comment',
++        ));
++    }
++
++    /**
++     * @return string
++     */
++    public function getName()
++    {
++        return 'comment';
++    }
++}
+diff --git a/app/Form/PostType.php b/app/Form/PostType.php
+new file mode 100644
+index 0000000..4cb34a2
+--- /dev/null
++++ b/app/Form/PostType.php
+@@ -0,0 +1,64 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Form;
++
++use Symfony\Component\Form\AbstractType;
++use Symfony\Component\Form\FormBuilderInterface;
++use Symfony\Component\OptionsResolver\OptionsResolverInterface;
++
++/**
++ * Defines the form used to create and manipulate blog posts.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class PostType extends AbstractType
++{
++    /**
++     * @param FormBuilderInterface $builder
++     * @param array                $options
++     */
++    public function buildForm(FormBuilderInterface $builder, array $options)
++    {
++        // for the full reference of options defined by each form field type
++        // see http://symfony.com/doc/current/reference/forms/types.html
++        $builder
++            ->add('title')
++            ->add('summary', 'textarea')
++            ->add('content', 'textarea', array(
++                'attr' => array('rows' => 20),
++            ))
++            ->add('authorEmail', 'email')
++            ->add('publishedAt', 'datetime', array(
++                'widget' => 'single_text',
++            ))
++        ;
++    }
++
++    /**
++     * @param OptionsResolverInterface $resolver
++     */
++    public function setDefaultOptions(OptionsResolverInterface $resolver)
++    {
++        $resolver->setDefaults(array(
++            'data_class' => 'AppBundle\Entity\Post',
++        ));
++    }
++
++    /**
++     * @return string
++     */
++    public function getName()
++    {
++        return 'post';
++    }
++}
+diff --git a/app/Repository/PostRepository.php b/app/Repository/PostRepository.php
+new file mode 100644
+index 0000000..1a1f13d
+--- /dev/null
++++ b/app/Repository/PostRepository.php
+@@ -0,0 +1,39 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Repository;
++
++use Doctrine\ORM\EntityRepository;
++use AppBundle\Entity\Post;
++
++/**
++ * This custom Doctrine repository contains some methods which are useful when
++ * querying for blog post information.
++ * See http://symfony.com/doc/current/book/doctrine.html#custom-repository-classes
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class PostRepository extends EntityRepository
++{
++    public function findLatest($limit = Post::NUM_ITEMS)
++    {
++        return $this
++            ->createQueryBuilder('p')
++            ->select('p')
++            ->where('p.publishedAt <= :now')->setParameter('now', new \DateTime())
++            ->orderBy('p.publishedAt', 'DESC')
++            ->setMaxResults($limit)
++            ->getQuery()
++            ->getResult()
++        ;
++    }
++}
+diff --git a/app/Repository/UserRepository.php b/app/Repository/UserRepository.php
+new file mode 100644
+index 0000000..d014ebc
+--- /dev/null
++++ b/app/Repository/UserRepository.php
+@@ -0,0 +1,27 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Repository;
++
++use Doctrine\ORM\EntityRepository;
++
++/**
++ * This custom Doctrine repository is empty because so far we don't need any custom
++ * method to query for application user information. But it's always a good practice
++ * to define a custom repository that will be used when the application grows.
++ * See http://symfony.com/doc/current/book/doctrine.html#custom-repository-classes
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class UserRepository extends EntityRepository
++{
++}
+diff --git a/app/Tests/Controller/Admin/BlogControllerTest.php b/app/Tests/Controller/Admin/BlogControllerTest.php
+new file mode 100644
+index 0000000..6961533
+--- /dev/null
++++ b/app/Tests/Controller/Admin/BlogControllerTest.php
+@@ -0,0 +1,74 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Tests\Controller\Admin;
++
++use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
++use Symfony\Component\HttpFoundation\Response;
++use AppBundle\Entity\Post;
++
++/**
++ * Functional test for the controllers defined inside the BlogController used
++ * for managing the blog in the backend.
++ * See http://symfony.com/doc/current/book/testing.html#functional-tests
++ *
++ * Whenever you test resources protected by a firewall, consider using the
++ * technique explained in:
++ * http://symfony.com/doc/current/cookbook/testing/http_authentication.html
++ *
++ * Execute the application tests using this command (requires PHPUnit to be installed):
++ *
++ *     $ cd your-symfony-project/
++ *     $ phpunit -c app
++ *
++ */
++class BlogControllerTest extends WebTestCase
++{
++    public function testRegularUsersCannotAccessToTheBackend()
++    {
++        $client = static::createClient(array(), array(
++            'PHP_AUTH_USER' => 'john_user',
++            'PHP_AUTH_PW'   => 'kitten',
++        ));
++
++        $client->request('GET', '/admin/post/');
++
++        $this->assertEquals(Response::HTTP_FORBIDDEN, $client->getResponse()->getStatusCode());
++    }
++
++    public function testAdministratorUsersCanAccessToTheBackend()
++    {
++        $client = static::createClient(array(), array(
++            'PHP_AUTH_USER' => 'anna_admin',
++            'PHP_AUTH_PW'   => 'kitten',
++        ));
++
++        $client->request('GET', '/admin/post/');
++
++        $this->assertEquals(Response::HTTP_OK, $client->getResponse()->getStatusCode());
++    }
++
++    public function testIndex()
++    {
++        $client = static::createClient(array(), array(
++            'PHP_AUTH_USER' => 'anna_admin',
++            'PHP_AUTH_PW'   => 'kitten',
++        ));
++
++        $crawler = $client->request('GET', '/admin/post/');
++
++        $this->assertCount(
++            Post::NUM_ITEMS,
++            $crawler->filter('body#admin_post_index #main tbody tr'),
++            'The backend homepage displays the right number of posts.'
++        );
++    }
++}
+diff --git a/app/Tests/Controller/BlogControllerTest.php b/app/Tests/Controller/BlogControllerTest.php
+new file mode 100644
+index 0000000..ee915ee
+--- /dev/null
++++ b/app/Tests/Controller/BlogControllerTest.php
+@@ -0,0 +1,40 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Tests\Controller;
++
++use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
++use AppBundle\Entity\Post;
++
++/**
++ * Functional test for the controllers defined inside BlogController.
++ * See http://symfony.com/doc/current/book/testing.html#functional-tests
++ *
++ * Execute the application tests using this command (requires PHPUnit to be installed):
++ *
++ *     $ cd your-symfony-project/
++ *     $ phpunit -c app
++ *
++ */
++class BlogControllerTest extends WebTestCase
++{
++    public function testIndex()
++    {
++        $client = static::createClient();
++        $crawler = $client->request('GET', '/blog/');
++
++        $this->assertCount(
++            Post::NUM_ITEMS,
++            $crawler->filter('article.post'),
++            'The homepage displays the right number of posts.'
++        );
++    }
++}
+diff --git a/app/Tests/Controller/DefaultControllerTest.php b/app/Tests/Controller/DefaultControllerTest.php
+new file mode 100644
+index 0000000..058191e
+--- /dev/null
++++ b/app/Tests/Controller/DefaultControllerTest.php
+@@ -0,0 +1,87 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Tests\Controller;
++
++use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
++
++/**
++ * Functional test that implements a "smoke test" of all the public and secure
++ * URLs of the application.
++ * See http://symfony.com/doc/current/best_practices/tests.html#functional-tests.
++ *
++ * Execute the application tests using this command (requires PHPUnit to be installed):
++ *
++ *     $ cd your-symfony-project/
++ *     $ phpunit -c app
++ *
++ */
++class DefaultControllerTest extends WebTestCase
++{
++    /**
++     * PHPUnit's data providers allow to execute the same tests repeated times
++     * using a different set of data each time.
++     * See http://symfony.com/doc/current/cookbook/form/unit_testing.html#testing-against-different-sets-of-data.
++     *
++     * @dataProvider getPublicUrls
++     */
++    public function testPublicUrls($url)
++    {
++        $client = self::createClient();
++        $client->request('GET', $url);
++
++        $this->assertTrue(
++            $client->getResponse()->isSuccessful(),
++            sprintf('The %s public URL loads correctly.', $url)
++        );
++    }
++
++    /**
++     * The application contains a lot of secure URLs which shouldn't be
++     * publicly accessible. This tests ensures that whenever a user tries to
++     * access one of those pages, a redirection to the login form is performed.
++     *
++     * @dataProvider getSecureUrls
++     */
++    public function testSecureUrls($url)
++    {
++        $client = self::createClient();
++        $client->request('GET', $url);
++
++        $this->assertTrue($client->getResponse()->isRedirect());
++
++        $this->assertEquals(
++            'http://localhost/login',
++            $client->getResponse()->getTargetUrl(),
++            sprintf('The %s secure URL redirects to the login form.', $url)
++        );
++    }
++
++    public function getPublicUrls()
++    {
++        return array(
++            array('/'),
++            array('/blog/'),
++            array('/blog/posts/morbi-tempus-commodo-mattis'),
++            array('/login'),
++        );
++    }
++
++    public function getSecureUrls()
++    {
++        return array(
++            array('/admin/post/'),
++            array('/admin/post/new'),
++            array('/admin/post/1'),
++            array('/admin/post/1/edit'),
++        );
++    }
++}
+diff --git a/app/Tests/Utils/SluggerTest.php b/app/Tests/Utils/SluggerTest.php
+new file mode 100644
+index 0000000..6f67724
+--- /dev/null
++++ b/app/Tests/Utils/SluggerTest.php
+@@ -0,0 +1,49 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace Tests\Utils;
++
++use AppBundle\Utils\Slugger;
++
++/**
++ * Unit test for the application utils.
++ * See http://symfony.com/doc/current/book/testing.html#unit-tests
++ *
++ * Execute the application tests using this command (requires PHPUnit to be installed):
++ *
++ *     $ cd your-symfony-project/
++ *     $ phpunit -c app
++ *
++ */
++class SluggerTest extends \PHPUnit_Framework_TestCase
++{
++    /**
++     * @dataProvider getSlugs
++     */
++    public function testSlugify($string, $slug)
++    {
++        $slugger = new Slugger();
++        $result = $slugger->slugify($string);
++
++        $this->assertEquals($slug, $result);
++    }
++
++    public function getSlugs()
++    {
++        return array(
++            array('Lorem Ipsum'     , 'lorem-ipsum'),
++            array('  Lorem Ipsum  ' , 'lorem-ipsum'),
++            array(' lOrEm  iPsUm  ' , 'lorem-ipsum'),
++            array('!Lorem Ipsum!'   , 'lorem-ipsum'),
++            array('lorem-ipsum'     , 'lorem-ipsum'),
++        );
++    }
++}
+diff --git a/app/Twig/AppExtension.php b/app/Twig/AppExtension.php
+new file mode 100644
+index 0000000..62b7999
+--- /dev/null
++++ b/app/Twig/AppExtension.php
+@@ -0,0 +1,54 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Twig;
++
++use AppBundle\Utils\Markdown;
++
++/**
++ * This Twig extension adds a new 'md2html' filter to easily transform Markdown
++ * contents into HTML contents inside Twig templates.
++ * See http://symfony.com/doc/current/cookbook/templating/twig_extension.html
++ *
++ * In addition to creating the Twig extension class, before using it you must also
++ * register it as a service. See app/config/services.yml file for details.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class AppExtension extends \Twig_Extension
++{
++    private $parser;
++
++    public function __construct(Markdown $parser)
++    {
++        $this->parser = $parser;
++    }
++
++    public function getFilters()
++    {
++        return array(
++            new \Twig_SimpleFilter('md2html', array($this, 'markdownToHtml'), array('is_safe' => array('html'))),
++        );
++    }
++
++    public function markdownToHtml($content)
++    {
++        return $this->parser->toHtml($content);
++    }
++
++    // the name of the Twig extension must be unique in the application. Consider
++    // using 'app.extension' if you only have one Twig extension in your application.
++    public function getName()
++    {
++        return 'app.extension';
++    }
++}
+diff --git a/app/Twig/SourceCodeExtension.php b/app/Twig/SourceCodeExtension.php
+new file mode 100644
+index 0000000..84b8c7c
+--- /dev/null
++++ b/app/Twig/SourceCodeExtension.php
+@@ -0,0 +1,142 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Twig;
++
++/**
++ * CAUTION: this is an extremely advanced Twig extension. It's used to get the
++ * source code of the controller and the template used to render the current
++ * page. If you are starting with Symfony, don't look at this code and consider
++ * studying instead the code of the app/Twig/AppExtension.php extension.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class SourceCodeExtension extends \Twig_Extension
++{
++    protected $loader;
++    protected $controller;
++    protected $template;
++
++    public function __construct(\Twig_LoaderInterface $loader)
++    {
++        $this->loader = $loader;
++    }
++
++    public function setController($controller)
++    {
++        $this->controller = $controller;
++    }
++
++    public function getFunctions()
++    {
++        return array(
++            new \Twig_SimpleFunction('show_source_code', array($this, 'showSourceCode'), array('is_safe' => array('html'), 'needs_environment' => true)),
++        );
++    }
++
++    public function showSourceCode(\Twig_Environment $twig, $template)
++    {
++        $this->template = $template;
++
++        return $twig->render('default/_source_code.html.twig', array(
++            'controller_source_code' => $this->getControllerCode(),
++            'controller_file_path'   => $this->getControllerRelativePath(),
++            'template_source_code'   => $this->getTemplateCode(),
++            'template_file_path'     => $this->getTemplateRelativePath(),
++        ));
++    }
++
++    private function getControllerCode()
++    {
++        // this happens for example for exceptions (404 errors, etc.)
++        if (null === $this->controller) {
++            return 'Not available';
++        }
++
++        $className = get_class($this->controller[0]);
++        $class = new \ReflectionClass($className);
++        $method = $class->getMethod($this->controller[1]);
++
++        $classCode = file($class->getFilename());
++        $methodCode = array_slice($classCode, $method->getStartline() - 1, $method->getEndLine() - $method->getStartline() + 1);
++        $controllerCode = '    '.$method->getDocComment()."\n".implode('', $methodCode);
++
++        return $this->unindentCode($controllerCode);
++    }
++
++    private function getControllerRelativePath()
++    {
++        // this happens for example for exceptions (404 errors, etc.)
++        if (null === $this->controller) {
++            return '';
++        }
++
++        $className = get_class($this->controller[0]);
++        $class = new \ReflectionClass($className);
++
++        $absolutePath = $class->getFilename();
++        $pathParts = explode(DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR, $absolutePath);
++        $relativePath = 'src'.DIRECTORY_SEPARATOR.$pathParts[1];
++
++        return $relativePath;
++    }
++
++    private function getTemplateCode()
++    {
++        return $this->loader->getSource($this->template->getTemplateName());
++    }
++
++    /**
++     * The logic implemented in this method is solely developed for the Symfony
++     * Demo application and cannot be used as a general purpose solution.
++     * Specifically, this logic won't work for templates that use a namespaced path
++     * (e.g. @WebProfiler/Collector/time.html.twig) or any loader different from
++     * Twig_Loader_Filesystem (e.g. TwigBundle:Exception:exception.txt.twig notation
++     * or an anonymous template created by the {% embed %} tag).
++     */
++    private function getTemplateRelativePath()
++    {
++        return 'app/Resources/views/'.$this->template->getTemplateName();
++    }
++
++    /**
++     * Utility method that "unindents" the given $code when all its lines start
++     * with a tabulation of four white spaces.
++     *
++     * @param  string $code
++     * @return string
++     */
++    private function unindentCode($code)
++    {
++        $formattedCode = '';
++        $codeLines = explode("\n", $code);
++
++        $indentedLines = array_filter($codeLines, function ($lineOfCode) {
++            return '' === $lineOfCode || '    ' === substr($lineOfCode, 0, 4);
++        });
++
++        if (count($indentedLines) === count($codeLines)) {
++            $formattedCode = array_map(function ($lineOfCode) { return substr($lineOfCode, 4); }, $codeLines);
++            $formattedCode = implode("\n", $formattedCode);
++        } else {
++            $formattedCode = $code;
++        }
++
++        return $formattedCode;
++    }
++
++    // the name of the Twig extension must be unique in the application
++    public function getName()
++    {
++        return 'app.source_code_extension';
++    }
++}
+diff --git a/app/Utils/Markdown.php b/app/Utils/Markdown.php
+new file mode 100644
+index 0000000..422a343
+--- /dev/null
++++ b/app/Utils/Markdown.php
+@@ -0,0 +1,37 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Utils;
++
++/**
++ * This class is a light interface between an external Markdown parser library
++ * and the application. It's generally recommended to create these light interfaces
++ * to decouple your application from the implementation details of the third-party library.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class Markdown
++{
++    private $parser;
++
++    public function __construct()
++    {
++        $this->parser = new \Parsedown();
++    }
++
++    public function toHtml($text)
++    {
++        $html = $this->parser->text($text);
++
++        return $html;
++    }
++}
+diff --git a/app/Utils/Slugger.php b/app/Utils/Slugger.php
+new file mode 100644
+index 0000000..9ffaa9b
+--- /dev/null
++++ b/app/Utils/Slugger.php
+@@ -0,0 +1,27 @@
++<?php
++
++/*
++ * This file is part of the Symfony package.
++ *
++ * (c) Fabien Potencier <fabien@symfony.com>
++ *
++ * For the full copyright and license information, please view the LICENSE
++ * file that was distributed with this source code.
++ */
++
++namespace AppBundle\Utils;
++
++/**
++ * This class is used to provide an example of integrating simple classes as
++ * services into a Symfony application.
++ *
++ * @author Ryan Weaver <weaverryan@gmail.com>
++ * @author Javier Eguiluz <javier.eguiluz@gmail.com>
++ */
++class Slugger
++{
++    public function slugify($string)
++    {
++        return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(strip_tags($string))), '-');
++    }
++}
+diff --git a/src/AppBundle/AppBundle.php b/src/AppBundle/AppBundle.php
+deleted file mode 100644
+index 0058860..0000000
+--- a/src/AppBundle/AppBundle.php
++++ /dev/null
+@@ -1,43 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle;
+-
+-use Symfony\Component\HttpKernel\Bundle\Bundle;
+-
+-/**
+- * This class is the one that transforms the src/AppBundle/ directory into a real
+- * Symfony bundle. There are two types of bundles:
+- *
+- *   * Reusable Bundles: they are meant to be shared between different applications.
+- *     A lot of them are even publicly available in sites like packagist.org.
+- *     See http://symfony.com/doc/current/cookbook/bundles/best_practices.html
+- *   * Application bundles: they are never shared, not even with other of your
+- *     applications. This allows them to be less strict in some conventions and
+- *     their code is usually simpler.
+- *     See http://symfony.com/doc/current/best_practices/business-logic.html
+- *
+- * The AppBundle is an application bundle that is already created when you install
+- * Symfony. Using AppBundle to start developing your Symfony application is
+- * considered a good practice, but you can also split your application code into
+- * as many bundles as you want.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class AppBundle extends Bundle
+-{
+-    // At first it's common to leave this class empty, but when the application grows,
+-    // you may need to add some initialization code in the boot() method.
+-    //
+-    // Checkout the Symfony\Component\HttpKernel\Bundle\Bundle class to see all
+-    // the available methods for bundles.
+-}
+diff --git a/src/AppBundle/Command/AddUserCommand.php b/src/AppBundle/Command/AddUserCommand.php
+deleted file mode 100644
+index 6b13664..0000000
+--- a/src/AppBundle/Command/AddUserCommand.php
++++ /dev/null
+@@ -1,274 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Command;
+-
+-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+-use Symfony\Component\Console\Input\InputArgument;
+-use Symfony\Component\Console\Input\InputInterface;
+-use Symfony\Component\Console\Input\InputOption;
+-use Symfony\Component\Console\Output\OutputInterface;
+-use Symfony\Component\Console\Question\Question;
+-use Doctrine\Common\Persistence\ObjectManager;
+-use AppBundle\Entity\User;
+-
+-/**
+- * A command console that creates users and stores them in the database.
+- * To use this command, open a terminal window, enter into your project
+- * directory and execute the following:
+- *
+- *     $ php app/console app:add-user
+- *
+- * To output detailed information, increase the command verbosity:
+- *
+- *     $ php app/console app:add-user -vv
+- *
+- * See http://symfony.com/doc/current/cookbook/console/console_command.html
+- *
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class AddUserCommand extends ContainerAwareCommand
+-{
+-    const MAX_ATTEMPTS = 5;
+-
+-    /**
+-     * @var ObjectManager
+-     */
+-    private $em;
+-
+-    protected function configure()
+-    {
+-        $this
+-            // a good practice is to use the 'app:' prefix to group all your custom application commands
+-            ->setName('app:add-user')
+-            ->setDescription('Creates users and stores them in the database')
+-            ->setHelp($this->getCommandHelp())
+-            // commands can optionally define arguments and/or options (mandatory and optional)
+-            // see http://symfony.com/doc/current/components/console/console_arguments.html
+-            ->addArgument('username', InputArgument::OPTIONAL, 'The username of the new user')
+-            ->addArgument('password', InputArgument::OPTIONAL, 'The plain password of the new user')
+-            ->addArgument('email', InputArgument::OPTIONAL, 'The email of the new user')
+-            ->addOption('is-admin', null, InputOption::VALUE_NONE, 'If set, the user is created as an administrator')
+-        ;
+-    }
+-
+-    /**
+-     * This method is executed before initialize() and execute(). Its purpose is
+-     * to check if some of the options/arguments are missing and interactively
+-     * ask the user for those values.
+-     *
+-     * This method is completely optional. If you are developing an internal console
+-     * command, you probably should not implement this method because it requires
+-     * quite a lot of work. However, if the command is meant to be used by external
+-     * users, this method is a nice way to fall back and prevent errors.
+-     */
+-    protected function interact(InputInterface $input, OutputInterface $output)
+-    {
+-        if (null !== $input->getArgument('username') && null !== $input->getArgument('password') && null !== $input->getArgument('email')) {
+-            return;
+-        }
+-
+-        // multi-line messages can be displayed this way...
+-        $output->writeln('');
+-        $output->writeln('Add User Command Interactive Wizard');
+-        $output->writeln('-----------------------------------');
+-
+-        // ...but you can also pass an array of strings to the writeln() method
+-        $output->writeln(array(
+-            '',
+-            'If you prefer to not use this interactive wizard, provide the',
+-            'arguments required by this command as follows:',
+-            '',
+-            ' $ php app/console app:add-user username password email@example.com',
+-            '',
+-        ));
+-
+-        $output->writeln(array(
+-            '',
+-            'Now we\'ll ask you for the value of all the missing command arguments.',
+-            '',
+-        ));
+-
+-        // See http://symfony.com/doc/current/components/console/helpers/questionhelper.html
+-        $console = $this->getHelper('question');
+-
+-        // Ask for the username if it's not defined
+-        $username = $input->getArgument('username');
+-        if (null === $username) {
+-            $question = new Question(' > <info>Username</info>: ');
+-            $question->setValidator(function ($answer) {
+-                if (empty($answer)) {
+-                    throw new \RuntimeException('The username cannot be empty');
+-                }
+-
+-                return $answer;
+-            });
+-            $question->setMaxAttempts(self::MAX_ATTEMPTS);
+-
+-            $username = $console->ask($input, $output, $question);
+-            $input->setArgument('username', $username);
+-        } else {
+-            $output->writeln(' > <info>Username</info>: '.$username);
+-        }
+-
+-        // Ask for the password if it's not defined
+-        $password = $input->getArgument('password');
+-        if (null === $password) {
+-            $question = new Question(' > <info>Password</info> (your type will be hidden): ');
+-            $question->setValidator(array($this, 'passwordValidator'));
+-            $question->setHidden(true);
+-            $question->setMaxAttempts(self::MAX_ATTEMPTS);
+-
+-            $password = $console->ask($input, $output, $question);
+-            $input->setArgument('password', $password);
+-        } else {
+-            $output->writeln(' > <info>Password</info>: '.str_repeat('*', strlen($password)));
+-        }
+-
+-        // Ask for the email if it's not defined
+-        $email = $input->getArgument('email');
+-        if (null === $email) {
+-            $question = new Question(' > <info>Email</info>: ');
+-            $question->setValidator(array($this, 'emailValidator'));
+-            $question->setMaxAttempts(self::MAX_ATTEMPTS);
+-
+-            $email = $console->ask($input, $output, $question);
+-            $input->setArgument('email', $email);
+-        } else {
+-            $output->writeln(' > <info>Email</info>: '.$email);
+-        }
+-    }
+-
+-    /**
+-     * This method is executed before the interact() and the execute() methods.
+-     * It's main purpose is to initialize the variables used in the rest of the
+-     * command methods.
+-     */
+-    protected function initialize(InputInterface $input, OutputInterface $output)
+-    {
+-        $this->em = $this->getContainer()->get('doctrine')->getManager();
+-    }
+-
+-    /**
+-     * This method is executed after interact() and initialize(). It usually
+-     * contains the logic to execute to complete this command task.
+-     */
+-    protected function execute(InputInterface $input, OutputInterface $output)
+-    {
+-        $startTime = microtime(true);
+-
+-        $username = $input->getArgument('username');
+-        $plainPassword = $input->getArgument('password');
+-        $email = $input->getArgument('email');
+-        $isAdmin = $input->getOption('is-admin');
+-
+-        // first check if a user with the same username already exists
+-        $existingUser = $this->em->getRepository('AppBundle:User')->findOneBy(array('username' => $username));
+-
+-        if (null !== $existingUser) {
+-            throw new \RuntimeException(sprintf('There is already a user registered with the "%s" username.', $username));
+-        }
+-
+-        // create the user and encode its password
+-        $user = new User();
+-        $user->setUsername($username);
+-        $user->setEmail($email);
+-        $user->setRoles(array($isAdmin ? 'ROLE_ADMIN' : 'ROLE_USER'));
+-
+-        // See http://symfony.com/doc/current/book/security.html#security-encoding-password
+-        $encoder = $this->getContainer()->get('security.password_encoder');
+-        $encodedPassword = $encoder->encodePassword($user, $plainPassword);
+-        $user->setPassword($encodedPassword);
+-
+-        $this->em->persist($user);
+-        $this->em->flush($user);
+-
+-        $output->writeln('');
+-        $output->writeln(sprintf('[OK] %s was successfully created: %s (%s)', $isAdmin ? 'Administrator user' : 'User', $user->getUsername(), $user->getEmail()));
+-
+-        if ($output->isVerbose()) {
+-            $finishTime = microtime(true);
+-            $elapsedTime = $finishTime - $startTime;
+-
+-            $output->writeln(sprintf('[INFO] New user database id: %d / Elapsed time: %.2f ms', $user->getId(), $elapsedTime*1000));
+-        }
+-    }
+-
+-    /**
+-     * This internal method should be private, but it's declared as public to
+-     * maintain PHP 5.3 compatibility when using it in a callback.
+-     *
+-     * @internal
+-     */
+-    public function passwordValidator($plainPassword)
+-    {
+-        if (empty($plainPassword)) {
+-            throw new \Exception('The password can not be empty');
+-        }
+-
+-        if (strlen(trim($plainPassword)) < 6) {
+-            throw new \Exception('The password must be at least 6 characters long');
+-        }
+-
+-        return $plainPassword;
+-    }
+-
+-    /**
+-     * This internal method should be private, but it's declared as public to
+-     * maintain PHP 5.3 compatibility when using it in a callback.
+-     *
+-     * @internal
+-     */
+-    public function emailValidator($email)
+-    {
+-        if (empty($email)) {
+-            throw new \Exception('The email can not be empty');
+-        }
+-
+-        if (false === strpos($email, '@')) {
+-            throw new \Exception('The email should look like a real email');
+-        }
+-
+-        return $email;
+-    }
+-
+-    /**
+-     * The command help is usually included in the configure() method, but when
+-     * it's too long, it's better to define a separate method to maintain the
+-     * code readability.
+-     */
+-    private function getCommandHelp()
+-    {
+-        return <<<HELP
+-The <info>%command.name%</info> command creates new users and saves them in the database:
+-
+-  <info>php %command.full_name%</info> <comment>username password email</comment>
+-
+-By default the command creates regular users. To create administrator users,
+-add the <comment>--is-admin</comment> option:
+-
+-  <info>php %command.full_name%</info> username password email <comment>--is-admin</comment>
+-
+-If you omit any of the three required arguments, the command will ask you to
+-provide the missing values:
+-
+-  # command will ask you for the email
+-  <info>php %command.full_name%</info> <comment>username password</comment>
+-
+-  # command will ask you for the email and password
+-  <info>php %command.full_name%</info> <comment>username</comment>
+-
+-  # command will ask you for all arguments
+-  <info>php %command.full_name%</info>
+-
+-HELP;
+-    }
+-}
+diff --git a/src/AppBundle/Command/ListUsersCommand.php b/src/AppBundle/Command/ListUsersCommand.php
+deleted file mode 100644
+index 4cd1bbc..0000000
+--- a/src/AppBundle/Command/ListUsersCommand.php
++++ /dev/null
+@@ -1,138 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Command;
+-
+-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+-use Symfony\Component\Console\Helper\Table;
+-use Symfony\Component\Console\Input\InputInterface;
+-use Symfony\Component\Console\Input\InputOption;
+-use Symfony\Component\Console\Output\OutputInterface;
+-use Symfony\Component\Console\Output\BufferedOutput;
+-
+-/**
+- * A command console that lists all the existing users. To use this command, open
+- * a terminal window, enter into your project directory and execute the following:
+- *
+- *     $ php app/console app:list-users
+- *
+- * See http://symfony.com/doc/current/cookbook/console/console_command.html
+- *
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class ListUsersCommand extends ContainerAwareCommand
+-{
+-    /**
+-     * @var ObjectManager
+-     */
+-    private $em;
+-
+-    protected function configure()
+-    {
+-        $this
+-            // a good practice is to use the 'app:' prefix to group all your custom application commands
+-            ->setName('app:list-users')
+-            ->setDescription('Lists all the existing users')
+-            ->setHelp(<<<HELP
+-The <info>%command.name%</info> command lists all the users registered in the application:
+-
+-  <info>php %command.full_name%</info>
+-
+-By default the command only displays the 50 most recent users. Set the number of
+-results to display with the <comment>--max-results</comment> option:
+-
+-  <info>php %command.full_name%</info> <comment>--max-results=2000</comment>
+-
+-In addition to displaying the user list, you can also send this information to
+-the email address specified in the <comment>--send-to</comment> option:
+-
+-  <info>php %command.full_name%</info> <comment>--send-to=fabien@symfony.com</comment>
+-
+-HELP
+-            )
+-            // commands can optionally define arguments and/or options (mandatory and optional)
+-            // see http://symfony.com/doc/current/components/console/console_arguments.html
+-            ->addOption('max-results', null, InputOption::VALUE_OPTIONAL, 'Limits the number of users listed', 50)
+-            ->addOption('send-to', null, InputOption::VALUE_OPTIONAL, 'If set, the result is sent to the given email address')
+-        ;
+-    }
+-
+-    /**
+-     * This method is executed before the the execute() method. It's main purpose
+-     * is to initialize the variables used in the rest of the command methods.
+-     */
+-    protected function initialize(InputInterface $input, OutputInterface $output)
+-    {
+-        $this->em = $this->getContainer()->get('doctrine')->getManager();
+-    }
+-
+-    /**
+-     * This method is executed after initialize(). It usually contains the logic
+-     * to execute to complete this command task.
+-     */
+-    protected function execute(InputInterface $input, OutputInterface $output)
+-    {
+-        $maxResults = $input->getOption('max-results');
+-        // Use ->findBy() instead of ->findAll() to allow result sorting and limiting
+-        $users = $this->em->getRepository('AppBundle:User')->findBy(array(), array('id' => 'DESC'), $maxResults);
+-
+-        // Doctrine query returns an array of objects and we need an array of plain arrays
+-        $usersAsPlainArrays = array_map(function ($user) {
+-            return array($user->getId(), $user->getUsername(), $user->getEmail(), implode(', ', $user->getRoles()));
+-        }, $users);
+-
+-        // In your console commands you should always use the regular output type,
+-        // which outputs contents directly in the console window. However, this
+-        // particular command uses the BufferedOutput type instead.
+-        // The reason is that the table displaying the list of users can be sent
+-        // via email if the '--send-to' option is provided. Instead of complicating
+-        // things, the BufferedOutput allows to get the command output and store
+-        // it in a variable before displaying it.
+-        $bufferedOutput = new BufferedOutput();
+-
+-        $table = new Table($bufferedOutput);
+-        $table
+-            ->setHeaders(array('ID', 'Username', 'Email', 'Roles'))
+-            ->setRows($usersAsPlainArrays)
+-        ;
+-        $table->render();
+-
+-        // instead of displaying the table of users, store it in a variable
+-        $tableContents = $bufferedOutput->fetch();
+-
+-        if (null !== $email = $input->getOption('send-to')) {
+-            $this->sendReport($tableContents, $email);
+-        }
+-
+-        $output->writeln($tableContents);
+-    }
+-
+-    /**
+-     * Sends the given $contents to the $recipient email address.
+-     *
+-     * @param string $contents
+-     * @param string $recipient
+-     */
+-    private function sendReport($contents, $recipient)
+-    {
+-        // See http://symfony.com/doc/current/cookbook/email/email.html
+-        $mailer = $this->getContainer()->get('mailer');
+-
+-        $message = $mailer->createMessage()
+-            ->setSubject(sprintf('app:list-users report (%s)', date('Y-m-d H:i:s')))
+-            ->setFrom($this->getContainer()->getParameter('app.notifications.email_sender'))
+-            ->setTo($recipient)
+-            ->setBody($contents, 'text/plain')
+-        ;
+-
+-        $mailer->send($message);
+-    }
+-}
+diff --git a/src/AppBundle/Controller/Admin/BlogController.php b/src/AppBundle/Controller/Admin/BlogController.php
+deleted file mode 100644
+index 841d6e9..0000000
+--- a/src/AppBundle/Controller/Admin/BlogController.php
++++ /dev/null
+@@ -1,191 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Controller\Admin;
+-
+-use AppBundle\Form\PostType;
+-use Symfony\Component\HttpFoundation\Request;
+-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+-use AppBundle\Entity\Post;
+-
+-/**
+- * Controller used to manage blog contents in the backend.
+- *
+- * @Route("/admin/post")
+- * @Security("has_role('ROLE_ADMIN')")
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class BlogController extends Controller
+-{
+-    /**
+-     * Lists all Post entities.
+-     *
+-     * This controller responds to two different routes with the same URL:
+-     *   * 'admin_post_index' is the route with a name that follows the same
+-     *     structure as the rest of the controllers of this class.
+-     *   * 'admin_index' is a nice shortcut to the backend homepage. This allows
+-     *     to create simpler links in the templates. Moreover, in the future we
+-     *     could move this annotation to any other controller while maintaining
+-     *     the route name and therefore, without breaking any existing link.
+-     *
+-     * @Route("/", name="admin_index")
+-     * @Route("/", name="admin_post_index")
+-     * @Method("GET")
+-     */
+-    public function indexAction()
+-    {
+-        $em = $this->getDoctrine()->getManager();
+-        $posts = $em->getRepository('AppBundle:Post')->findAll();
+-
+-        return $this->render('admin/blog/index.html.twig', array('posts' => $posts));
+-    }
+-    
+-    /**
+-     * Creates a new Post entity.
+-     *
+-     * @Route("/new", name="admin_post_new")
+-     * @Method({"GET", "POST"})
+-     *
+-     * NOTE: the Method annotation is optional, but it's a recommended practice
+-     * to constraint the HTTP methods each controller responds to (by default
+-     * it responds to all methods).
+-     */
+-    public function newAction(Request $request)
+-    {
+-        $post = new Post();
+-        $post->setAuthorEmail($this->getUser()->getEmail());
+-        $form = $this->createForm(new PostType(), $post);
+-
+-        $form->handleRequest($request);
+-
+-        // the isSubmitted() method is completely optional because the other
+-        // isValid() method already checks whether the form is submitted.
+-        // However, we explicitly add it to improve code readability.
+-        // See http://symfony.com/doc/current/best_practices/forms.html#handling-form-submits
+-        if ($form->isSubmitted() && $form->isValid()) {
+-            $post->setSlug($this->get('slugger')->slugify($post->getTitle()));
+-
+-            $em = $this->getDoctrine()->getManager();
+-            $em->persist($post);
+-            $em->flush();
+-
+-            return $this->redirectToRoute('admin_post_index');
+-        }
+-
+-        return $this->render('admin/blog/new.html.twig', array(
+-            'post' => $post,
+-            'form' => $form->createView(),
+-        ));
+-    }
+-
+-    /**
+-     * Finds and displays a Post entity.
+-     *
+-     * @Route("/{id}", requirements={"id" = "\d+"}, name="admin_post_show")
+-     * @Method("GET")
+-     * @Security("post.isAuthor(user)")
+-     *
+-     * NOTE: You can also centralize security logic by using a "voter"
+-     * See http://symfony.com/doc/current/cookbook/security/voters_data_permission.html
+-     */
+-    public function showAction(Post $post)
+-    {
+-        $deleteForm = $this->createDeleteForm($post);
+-
+-        return $this->render('admin/blog/show.html.twig', array(
+-            'post'        => $post,
+-            'delete_form' => $deleteForm->createView(),
+-        ));
+-    }
+-
+-    /**
+-     * Displays a form to edit an existing Post entity.
+-     *
+-     * @Route("/{id}/edit", requirements={"id" = "\d+"}, name="admin_post_edit")
+-     * @Method({"GET", "POST"})
+-     * @Security("post.isAuthor(user)")
+-     */
+-    public function editAction(Post $post, Request $request)
+-    {
+-        $em = $this->getDoctrine()->getManager();
+-
+-        $editForm = $this->createForm(new PostType(), $post);
+-        $deleteForm = $this->createDeleteForm($post);
+-
+-        $editForm->handleRequest($request);
+-
+-        if ($editForm->isSubmitted() && $editForm->isValid()) {
+-            $post->setSlug($this->get('slugger')->slugify($post->getTitle()));
+-            $em->flush();
+-
+-            return $this->redirectToRoute('admin_post_edit', array('id' => $post->getId()));
+-        }
+-
+-        return $this->render('admin/blog/edit.html.twig', array(
+-            'post'        => $post,
+-            'edit_form'   => $editForm->createView(),
+-            'delete_form' => $deleteForm->createView(),
+-        ));
+-    }
+-
+-    /**
+-     * Deletes a Post entity.
+-     *
+-     * @Route("/{id}", name="admin_post_delete")
+-     * @Method("DELETE")
+-     * @Security("post.isAuthor(user)")
+-     *
+-     * The Security annotation value is an expression (if it evaluates to false,
+-     * the authorization mechanism will prevent the user accessing this resource).
+-     * The isAuthor() method is defined in the AppBundle\Entity\Post entity.
+-     */
+-    public function deleteAction(Request $request, Post $post)
+-    {
+-        $form = $this->createDeleteForm($post);
+-        $form->handleRequest($request);
+-
+-        if ($form->isSubmitted() && $form->isValid()) {
+-            $em = $this->getDoctrine()->getManager();
+-
+-            $em->remove($post);
+-            $em->flush();
+-        }
+-
+-        return $this->redirectToRoute('admin_post_index');
+-    }
+-
+-    /**
+-     * Creates a form to delete a Post entity by id.
+-     *
+-     * This is necessary because browsers don't support HTTP methods different
+-     * from GET and POST. Since the controller that removes the blog posts expects
+-     * a DELETE method, the trick is to create a simple form that *fakes* the
+-     * HTTP DELETE method.
+-     * See http://symfony.com/doc/current/cookbook/routing/method_parameters.html.
+-     *
+-     * @param Post $post The post object
+-     *
+-     * @return \Symfony\Component\Form\Form The form
+-     */
+-    private function createDeleteForm(Post $post)
+-    {
+-        return $this->createFormBuilder()
+-            ->setAction($this->generateUrl('admin_post_delete', array('id' => $post->getId())))
+-            ->setMethod('DELETE')
+-            ->getForm()
+-        ;
+-    }
+-}
+diff --git a/src/AppBundle/Controller/BlogController.php b/src/AppBundle/Controller/BlogController.php
+deleted file mode 100644
+index fa3a7ba..0000000
+--- a/src/AppBundle/Controller/BlogController.php
++++ /dev/null
+@@ -1,130 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Controller;
+-
+-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+-use Symfony\Component\HttpFoundation\Request;
+-use Symfony\Component\HttpFoundation\Response;
+-use AppBundle\Entity\Post;
+-use AppBundle\Entity\Comment;
+-use AppBundle\Form\CommentType;
+-
+-/**
+- * Controller used to manage blog contents in the public part of the site.
+- *
+- * @Route("/blog")
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class BlogController extends Controller
+-{
+-    /**
+-     * @Route("/", name="blog_index")
+-     */
+-    public function indexAction()
+-    {
+-        $em = $this->getDoctrine()->getManager();
+-        $posts = $em->getRepository('AppBundle:Post')->findLatest();
+-
+-        return $this->render('blog/index.html.twig', array('posts' => $posts));
+-    }
+-
+-    /**
+-     * @Route("/posts/{slug}", name="blog_post")
+-     *
+-     * NOTE: The $post controller argument is automatically injected by Symfony
+-     * after performing a database query looking for a Post with the 'slug'
+-     * value given in the route.
+-     * See http://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
+-     */
+-    public function postShowAction(Post $post)
+-    {
+-        return $this->render('blog/post_show.html.twig', array('post' => $post));
+-    }
+-
+-    /**
+-     * @Route("/comment/{postSlug}/new", name = "comment_new")
+-     * @Security("is_granted('IS_AUTHENTICATED_FULLY')")
+-     *
+-     * @Method("POST")
+-     * @ParamConverter("post", options={"mapping": {"postSlug": "slug"}})
+-     *
+-     * NOTE: The ParamConverter mapping is required because the route parameter
+-     * (postSlug) doesn't match any of the Doctrine entity properties (slug).
+-     * See http://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html#doctrine-converter
+-     */
+-    public function commentNewAction(Request $request, Post $post)
+-    {
+-        $form = $this->createCommentForm();
+-
+-        $form->handleRequest($request);
+-
+-        if ($form->isSubmitted() && $form->isValid()) {
+-            /** @var Comment $comment */
+-            $comment = $form->getData();
+-            $comment->setAuthorEmail($this->getUser()->getEmail());
+-            $comment->setPost($post);
+-            $comment->setPublishedAt(new \DateTime());
+-
+-            $em = $this->getDoctrine()->getManager();
+-            $em->persist($comment);
+-            $em->flush();
+-
+-            return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
+-        }
+-
+-        return $this->render('blog/comment_form_error.html.twig', array(
+-            'post' => $post,
+-            'form' => $form->createView(),
+-        ));
+-    }
+-
+-    /**
+-     * This controller is called directly via the render() function in the
+-     * blog/post_show.html.twig template. That's why it's not needed to define
+-     * a route name for it.
+-     *
+-     * The "id" of the Post is passed in and then turned into a Post object
+-     * automatically by the ParamConverter.
+-     *
+-     * @param Post $post
+-     *
+-     * @return Response
+-     */
+-    public function commentFormAction(Post $post)
+-    {
+-        $form = $this->createCommentForm();
+-
+-        return $this->render('blog/comment_form.html.twig', array(
+-            'post' => $post,
+-            'form' => $form->createView(),
+-        ));
+-    }
+-
+-    /**
+-     * This is a utility method used to create comment forms. It's recommended
+-     * to not define this kind of methods in a controller class, but sometimes
+-     * is convenient for defining small methods.
+-     */
+-    private function createCommentForm()
+-    {
+-        $form = $this->createForm(new CommentType());
+-        $form->add('submit', 'submit', array('label' => 'Create'));
+-
+-        return $form;
+-    }
+-}
+diff --git a/src/AppBundle/Controller/SecurityController.php b/src/AppBundle/Controller/SecurityController.php
+deleted file mode 100644
+index e203bd8..0000000
+--- a/src/AppBundle/Controller/SecurityController.php
++++ /dev/null
+@@ -1,67 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Controller;
+-
+-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+-use Symfony\Component\HttpFoundation\Request;
+-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+-
+-/**
+- * Controller used to manage the application security.
+- * See http://symfony.com/doc/current/cookbook/security/form_login_setup.html.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class SecurityController extends Controller
+-{
+-    /**
+-     * @Route("/login", name="security_login_form")
+-     */
+-    public function loginAction()
+-    {
+-        $helper = $this->get('security.authentication_utils');
+-
+-        return $this->render('security/login.html.twig', array(
+-            // last username entered by the user (if any)
+-            'last_username' => $helper->getLastUsername(),
+-            // last authentication error (if any)
+-            'error' => $helper->getLastAuthenticationError(),
+-        ));
+-    }
+-
+-    /**
+-     * This is the route the login form submits to.
+-     *
+-     * But, this will never be executed. Symfony will intercept this first
+-     * and handle the login automatically. See form_login in app/config/security.yml
+-     *
+-     * @Route("/login_check", name="security_login_check")
+-     */
+-    public function loginCheckAction()
+-    {
+-        throw new \Exception('This should never be reached!');
+-    }
+-
+-    /**
+-     * This is the route the user can use to logout.
+-     *
+-     * But, this will never be executed. Symfony will intercept this first
+-     * and handle the logout automatically. See logout in app/config/security.yml
+-     *
+-     * @Route("/logout", name="security_logout")
+-     */
+-    public function logoutAction()
+-    {
+-        throw new \Exception('This should never be reached!');
+-    }
+-}
+diff --git a/src/AppBundle/DataFixtures/ORM/LoadFixtures.php b/src/AppBundle/DataFixtures/ORM/LoadFixtures.php
+deleted file mode 100644
+index 43d99de..0000000
+--- a/src/AppBundle/DataFixtures/ORM/LoadFixtures.php
++++ /dev/null
+@@ -1,186 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\DataFixtures\ORM;
+-
+-use AppBundle\Entity\User;
+-use AppBundle\Entity\Post;
+-use AppBundle\Entity\Comment;
+-use Doctrine\Common\DataFixtures\FixtureInterface;
+-use Doctrine\Common\Persistence\ObjectManager;
+-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+-use Symfony\Component\DependencyInjection\ContainerInterface;
+-
+-/**
+- * Defines the sample data to load in the database when executing this command:
+- *   $ php app/console doctrine:fixtures:load
+- *
+- * See http://symfony.com/doc/current/bundles/DoctrineFixturesBundle/index.html
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class LoadFixtures implements FixtureInterface, ContainerAwareInterface
+-{
+-    /** @var ContainerInterface */
+-    private $container;
+-
+-    public function load(ObjectManager $manager)
+-    {
+-        $this->loadUsers($manager);
+-        $this->loadPosts($manager);
+-    }
+-
+-    private function loadUsers(ObjectManager $manager)
+-    {
+-        $passwordEncoder = $this->container->get('security.password_encoder');
+-
+-        $johnUser = new User();
+-        $johnUser->setUsername('john_user');
+-        $johnUser->setEmail('john_user@symfony.com');
+-        $encodedPassword = $passwordEncoder->encodePassword($johnUser, 'kitten');
+-        $johnUser->setPassword($encodedPassword);
+-        $manager->persist($johnUser);
+-
+-        $annaAdmin = new User();
+-        $annaAdmin->setUsername('anna_admin');
+-        $annaAdmin->setEmail('anna_admin@symfony.com');
+-        $annaAdmin->setRoles(array('ROLE_ADMIN'));
+-        $encodedPassword = $passwordEncoder->encodePassword($annaAdmin, 'kitten');
+-        $annaAdmin->setPassword($encodedPassword);
+-        $manager->persist($annaAdmin);
+-
+-        $manager->flush();
+-    }
+-
+-    private function loadPosts(ObjectManager $manager)
+-    {
+-        foreach (range(1, 10) as $i) {
+-            $post = new Post();
+-
+-            $post->setTitle($this->getRandomPostTitle());
+-            $post->setSummary($this->getRandomPostSummary());
+-            $post->setSlug($this->container->get('slugger')->slugify($post->getTitle()));
+-            $post->setContent($this->getPostContent());
+-            $post->setAuthorEmail('anna_admin@symfony.com');
+-            $post->setPublishedAt(new \DateTime('now - '.$i.'days'));
+-
+-            foreach (range(1, 5) as $j) {
+-                $comment = new Comment();
+-
+-                $comment->setAuthorEmail('john_user@symfony.com');
+-                $comment->setPublishedAt(new \DateTime('now + '.($i + $j).'seconds'));
+-                $comment->setContent($this->getRandomCommentContent());
+-                $comment->setPost($post);
+-
+-                $manager->persist($comment);
+-                $post->addComment($comment);
+-            }
+-
+-            $manager->persist($post);
+-        }
+-
+-        $manager->flush();
+-    }
+-
+-    public function setContainer(ContainerInterface $container = null)
+-    {
+-        $this->container = $container;
+-    }
+-
+-    private function getPostContent()
+-    {
+-        return <<<MARKDOWN
+-Lorem ipsum dolor sit amet consectetur adipisicing elit, sed do eiusmod tempor
+-incididunt ut labore et **dolore magna aliqua**: Duis aute irure dolor in
+-reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+-deserunt mollit anim id est laborum.
+-
+-  * Ut enim ad minim veniam
+-  * Quis nostrud exercitation *ullamco laboris*
+-  * Nisi ut aliquip ex ea commodo consequat
+-
+-Praesent id fermentum lorem. Ut est lorem, fringilla at accumsan nec, euismod at
+-nunc. Aenean mattis sollicitudin mattis. Nullam pulvinar vestibulum bibendum.
+-Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
+-himenaeos. Fusce nulla purus, gravida ac interdum ut, blandit eget ex. Duis a
+-luctus dolor.
+-
+-Integer auctor massa maximus nulla scelerisque accumsan. *Aliquam ac malesuada*
+-ex. Pellentesque tortor magna, vulputate eu vulputate ut, venenatis ac lectus.
+-Praesent ut lacinia sem. Mauris a lectus eget felis mollis feugiat. Quisque
+-efficitur, mi ut semper pulvinar, urna urna blandit massa, eget tincidunt augue
+-nulla vitae est.
+-
+-Ut posuere aliquet tincidunt. Aliquam erat volutpat. **Class aptent taciti**
+-sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Morbi
+-arcu orci, gravida eget aliquam eu, suscipit et ante. Morbi vulputate metus vel
+-ipsum finibus, ut dapibus massa feugiat. Vestibulum vel lobortis libero. Sed
+-tincidunt tellus et viverra scelerisque. Pellentesque tincidunt cursus felis.
+-Sed in egestas erat.
+-
+-Aliquam pulvinar interdum massa, vel ullamcorper ante consectetur eu. Vestibulum
+-lacinia ac enim vel placerat. Integer pulvinar magna nec dui malesuada, nec
+-congue nisl dictum. Donec mollis nisl tortor, at congue erat consequat a. Nam
+-tempus elit porta, blandit elit vel, viverra lorem. Sed sit amet tellus
+-tincidunt, faucibus nisl in, aliquet libero.
+-MARKDOWN;
+-    }
+-
+-    private function getPhrases()
+-    {
+-        return array(
+-            'Lorem ipsum dolor sit amet consectetur adipiscing elit',
+-            'Pellentesque vitae velit ex',
+-            'Mauris dapibus risus quis suscipit vulputate',
+-            'Eros diam egestas libero eu vulputate risus',
+-            'In hac habitasse platea dictumst',
+-            'Morbi tempus commodo mattis',
+-            'Ut suscipit posuere justo at vulputate',
+-            'Ut eleifend mauris et risus ultrices egestas',
+-            'Aliquam sodales odio id eleifend tristique',
+-            'Urna nisl sollicitudin id varius orci quam id turpis',
+-            'Nulla porta lobortis ligula vel egestas',
+-            'Curabitur aliquam euismod dolor non ornare',
+-            'Sed varius a risus eget aliquam',
+-            'Nunc viverra elit ac laoreet suscipit',
+-            'Pellentesque et sapien pulvinar consectetur',
+-        );
+-    }
+-
+-    private function getRandomPostTitle()
+-    {
+-        $titles = $this->getPhrases();
+-
+-        return $titles[array_rand($titles)];
+-    }
+-
+-    private function getRandomPostSummary()
+-    {
+-        $phrases = $this->getPhrases();
+-
+-        $numPhrases = rand(6, 12);
+-        shuffle($phrases);
+-
+-        return implode(' ', array_slice($phrases, 0, $numPhrases-1));
+-    }
+-
+-    private function getRandomCommentContent()
+-    {
+-        $phrases = $this->getPhrases();
+-
+-        $numPhrases = rand(2, 15);
+-        shuffle($phrases);
+-
+-        return implode(' ', array_slice($phrases, 0, $numPhrases-1));
+-    }
+-}
+diff --git a/src/AppBundle/Entity/Comment.php b/src/AppBundle/Entity/Comment.php
+deleted file mode 100644
+index 1db8ce1..0000000
+--- a/src/AppBundle/Entity/Comment.php
++++ /dev/null
+@@ -1,123 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Entity;
+-
+-use Doctrine\ORM\Mapping as ORM;
+-use Symfony\Component\Validator\Constraints as Assert;
+-
+-/**
+- * @ORM\Entity
+- *
+- * Defines the properties of the Comment entity to represent the blog comments.
+- * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
+- *
+- * Tip: if you have an existing database, you can generate these entity class automatically.
+- * See http://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class Comment
+-{
+-    /**
+-     * @ORM\Id
+-     * @ORM\GeneratedValue
+-     * @ORM\Column(type="integer")
+-     */
+-    private $id;
+-
+-    /**
+-     * @ORM\ManyToOne(targetEntity="Post", inversedBy="comments")
+-     * @ORM\JoinColumn(nullable=false)
+-     */
+-    private $post;
+-
+-    /**
+-     * @ORM\Column(type="text")
+-     * @assert\NotBlank(message="Please don't leave your comment blank!")
+-     * @Assert\Length(
+-     *     min = "5",
+-     *     minMessage = "Comment is too short ({{ limit }} characters minimum)",
+-     *     max = "10000",
+-     *     maxMessage = "Comment is too long ({{ limit }} characters maximum)"
+-     * )
+-     */
+-    private $content;
+-
+-    /**
+-     * @ORM\Column(type="string")
+-     * @Assert\Email()
+-     */
+-    private $authorEmail;
+-
+-    /**
+-     * @ORM\Column(type="datetime")
+-     * @Assert\DateTime()
+-     */
+-    private $publishedAt;
+-
+-    public function __construct()
+-    {
+-        $this->publishedAt = new \DateTime();
+-    }
+-
+-    /**
+-     * @Assert\True(message = "The content of this comment is considered spam.")
+-     */
+-    public function isLegitComment()
+-    {
+-        $containsInvalidCharacters = false !== strpos($this->content, '@');
+-
+-        return !$containsInvalidCharacters;
+-    }
+-
+-    public function getId()
+-    {
+-        return $this->id;
+-    }
+-
+-    public function getContent()
+-    {
+-        return $this->content;
+-    }
+-    public function setContent($content)
+-    {
+-        $this->content = $content;
+-    }
+-
+-    public function getAuthorEmail()
+-    {
+-        return $this->authorEmail;
+-    }
+-    public function setAuthorEmail($authorEmail)
+-    {
+-        $this->authorEmail = $authorEmail;
+-    }
+-
+-    public function getPublishedAt()
+-    {
+-        return $this->publishedAt;
+-    }
+-    public function setPublishedAt($publishedAt)
+-    {
+-        $this->publishedAt = $publishedAt;
+-    }
+-
+-    public function getPost()
+-    {
+-        return $this->post;
+-    }
+-    public function setPost(Post $post = null)
+-    {
+-        $this->post = $post;
+-    }
+-}
+diff --git a/src/AppBundle/Entity/Post.php b/src/AppBundle/Entity/Post.php
+deleted file mode 100644
+index 3abefec..0000000
+--- a/src/AppBundle/Entity/Post.php
++++ /dev/null
+@@ -1,184 +0,0 @@
+-<?php
+-
+-namespace AppBundle\Entity;
+-
+-use Doctrine\ORM\Mapping as ORM;
+-use Doctrine\Common\Collections\ArrayCollection;
+-use Symfony\Component\Validator\Constraints as Assert;
+-
+-/**
+- * @ORM\Entity(repositoryClass="AppBundle\Repository\PostRepository")
+- *
+- * Defines the properties of the Post entity to represent the blog posts.
+- * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
+- *
+- * Tip: if you have an existing database, you can generate these entity class automatically.
+- * See http://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class Post
+-{
+-    /**
+-     * Use constants to define configuration options that rarely change instead
+-     * of specifying them in app/config/config.yml.
+-     * See http://symfony.com/doc/current/best_practices/configuration.html#constants-vs-configuration-options
+-     */
+-    const NUM_ITEMS = 10;
+-
+-    /**
+-     * @ORM\Id
+-     * @ORM\GeneratedValue
+-     * @ORM\Column(type="integer")
+-     */
+-    private $id;
+-
+-    /**
+-     * @ORM\Column(type="string")
+-     * @Assert\NotBlank()
+-     */
+-    private $title;
+-
+-    /**
+-     * @ORM\Column(type="string")
+-     */
+-    private $slug;
+-
+-    /**
+-     * @ORM\Column(type="string")
+-     * @Assert\NotBlank(message="Give your post a summary!")
+-     */
+-    private $summary;
+-
+-    /**
+-     * @ORM\Column(type="text")
+-     * @Assert\Length(
+-     *     min = "10",
+-     *     minMessage = "Post content is too short ({{ limit }} characters minimum)"
+-     * )
+-     */
+-    private $content;
+-
+-    /**
+-     * @ORM\Column(type="string")
+-     * @Assert\Email()
+-     */
+-    private $authorEmail;
+-
+-    /**
+-     * @ORM\Column(type="datetime")
+-     * @Assert\DateTime()
+-     */
+-    private $publishedAt;
+-
+-    /**
+-     * @ORM\OneToMany(
+-     *      targetEntity="Comment",
+-     *      mappedBy="post",
+-     *      orphanRemoval=true
+-     * )
+-     * @ORM\OrderBy({"publishedAt" = "DESC"})
+-     */
+-    private $comments;
+-
+-    public function __construct()
+-    {
+-        $this->publishedAt = new \DateTime();
+-        $this->comments = new ArrayCollection();
+-    }
+-
+-    public function getId()
+-    {
+-        return $this->id;
+-    }
+-
+-    public function getTitle()
+-    {
+-        return $this->title;
+-    }
+-
+-    public function setTitle($title)
+-    {
+-        $this->title = $title;
+-    }
+-
+-    public function getSlug()
+-    {
+-        return $this->slug;
+-    }
+-
+-    public function setSlug($slug)
+-    {
+-        $this->slug = $slug;
+-    }
+-
+-    public function getContent()
+-    {
+-        return $this->content;
+-    }
+-
+-    public function setContent($content)
+-    {
+-        $this->content = $content;
+-    }
+-
+-    public function getAuthorEmail()
+-    {
+-        return $this->authorEmail;
+-    }
+-
+-    public function setAuthorEmail($authorEmail)
+-    {
+-        $this->authorEmail = $authorEmail;
+-    }
+-
+-    /**
+-     * Is the given User the author of this Post?
+-     *
+-     * @param User $user
+-     *
+-     * @return bool
+-     */
+-    public function isAuthor(User $user = null)
+-    {
+-        return $user->getEmail() == $this->getAuthorEmail();
+-    }
+-
+-    public function getPublishedAt()
+-    {
+-        return $this->publishedAt;
+-    }
+-
+-    public function setPublishedAt($publishedAt)
+-    {
+-        $this->publishedAt = $publishedAt;
+-    }
+-
+-    public function getComments()
+-    {
+-        return $this->comments;
+-    }
+-
+-    public function addComment(Comment $comment)
+-    {
+-        $this->comments->add($comment);
+-        $comment->setPost($this);
+-    }
+-
+-    public function removeComment(Comment $comments)
+-    {
+-        $this->comments->removeElement($comments);
+-        $comments->setPost(null);
+-    }
+-
+-    public function getSummary()
+-    {
+-        return $this->summary;
+-    }
+-
+-    public function setSummary($summary)
+-    {
+-        $this->summary = $summary;
+-    }
+-}
+diff --git a/src/AppBundle/Entity/User.php b/src/AppBundle/Entity/User.php
+deleted file mode 100644
+index 6cfa3c4..0000000
+--- a/src/AppBundle/Entity/User.php
++++ /dev/null
+@@ -1,121 +0,0 @@
+-<?php
+-
+-namespace AppBundle\Entity;
+-
+-use Doctrine\ORM\Mapping as ORM;
+-use Symfony\Component\Security\Core\User\UserInterface;
+-
+-/**
+- * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
+- *
+- * Defines the properties of the User entity to represent the application users.
+- * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
+- *
+- * Tip: if you have an existing database, you can generate these entity class automatically.
+- * See http://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class User implements UserInterface
+-{
+-    /**
+-     * @ORM\Id
+-     * @ORM\GeneratedValue
+-     * @ORM\Column(type="integer")
+-     */
+-    private $id;
+-
+-    /**
+-     * @ORM\Column(type="string", unique=true)
+-     */
+-    private $username;
+-
+-    /**
+-     * @ORM\Column(type="string", unique=true)
+-     */
+-    private $email;
+-
+-    /**
+-     * @ORM\Column(type="string")
+-     */
+-    private $password;
+-
+-    /**
+-     * @ORM\Column(type="json_array")
+-     */
+-    private $roles = array();
+-
+-    public function getId()
+-    {
+-        return $this->id;
+-    }
+-
+-    public function getUsername()
+-    {
+-        return $this->username;
+-    }
+-    public function setUsername($username)
+-    {
+-        $this->username = $username;
+-    }
+-
+-    public function getEmail()
+-    {
+-        return $this->email;
+-    }
+-    public function setEmail($email)
+-    {
+-        $this->email = $email;
+-    }
+-
+-    public function getPassword()
+-    {
+-        return $this->password;
+-    }
+-    public function setPassword($password)
+-    {
+-        $this->password = $password;
+-    }
+-
+-    /**
+-     * Returns the roles or permissions granted to the user for security.
+-     */
+-    public function getRoles()
+-    {
+-        $roles = $this->roles;
+-
+-        // guarantees that a user always has at least one role for security
+-        if (empty($roles)) {
+-            $roles[] = 'ROLE_USER';
+-        }
+-
+-        return array_unique($roles);
+-    }
+-
+-    public function setRoles($roles)
+-    {
+-        $this->roles = $roles;
+-    }
+-
+-    /**
+-     * Returns the salt that was originally used to encode the password.
+-     */
+-    public function getSalt()
+-    {
+-        // See "Do you need to use a Salt?" at http://symfony.com/doc/current/cookbook/security/entity_provider.html
+-        // we're using bcrypt in security.yml to encode the password, so
+-        // the salt value is built-in and you don't have to generate one
+-
+-        return;
+-    }
+-
+-    /**
+-     * Removes sensitive data from the user.
+-     */
+-    public function eraseCredentials()
+-    {
+-        // if you had a plainPassword property, you'd nullify it here
+-        // $this->plainPassword = null;
+-    }
+-}
+diff --git a/src/AppBundle/EventListener/ControllerListener.php b/src/AppBundle/EventListener/ControllerListener.php
+deleted file mode 100644
+index d57cdf9..0000000
+--- a/src/AppBundle/EventListener/ControllerListener.php
++++ /dev/null
+@@ -1,48 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\EventListener;
+-
+-use Symfony\Component\HttpKernel\HttpKernelInterface;
+-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+-use AppBundle\Twig\SourceCodeExtension;
+-
+-/**
+- * Defines the method that 'listens' to the 'kernel.controller' event, which is
+- * triggered whenever a controller is executed in the application.
+- * See http://symfony.com/doc/current/book/internals.html#kernel-controller-event
+- *
+- * Tip: listeners are common in Symfony applications, but this particular listener
+- * is too advanced and too specific for the demo application needs. For more common
+- * examples see http://symfony.com/doc/current/cookbook/service_container/event_listener.html
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class ControllerListener
+-{
+-    protected $twigExtension;
+-
+-    public function __construct(SourceCodeExtension $twigExtension)
+-    {
+-        $this->twigExtension = $twigExtension;
+-    }
+-
+-    public function registerCurrentController(FilterControllerEvent $event)
+-    {
+-        // this check is needed because in Symfony a request can perform any
+-        // number of sub-requests. See
+-        // http://symfony.com/doc/current/components/http_kernel/introduction.html#sub-requests
+-        if (HttpKernelInterface::MASTER_REQUEST === $event->getRequestType()) {
+-            $this->twigExtension->setController($event->getController());
+-        }
+-    }
+-}
+diff --git a/src/AppBundle/Form/CommentType.php b/src/AppBundle/Form/CommentType.php
+deleted file mode 100644
+index 2c15df0..0000000
+--- a/src/AppBundle/Form/CommentType.php
++++ /dev/null
+@@ -1,57 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Form;
+-
+-use Symfony\Component\Form\AbstractType;
+-use Symfony\Component\Form\FormBuilderInterface;
+-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+-
+-/**
+- * Defines the form used to create and manipulate blog comments. Although in this
+- * case the form is trivial and we could build it inside the controller, a good
+- * practice is to always define your forms as classes.
+- * See http://symfony.com/doc/current/book/forms.html#creating-form-classes
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class CommentType extends AbstractType
+-{
+-    /**
+-     * @param FormBuilderInterface $builder
+-     * @param array                $options
+-     */
+-    public function buildForm(FormBuilderInterface $builder, array $options)
+-    {
+-        $builder
+-            ->add('content')
+-        ;
+-    }
+-
+-    /**
+-     * @param OptionsResolverInterface $resolver
+-     */
+-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+-    {
+-        $resolver->setDefaults(array(
+-            'data_class' => 'AppBundle\Entity\Comment',
+-        ));
+-    }
+-
+-    /**
+-     * @return string
+-     */
+-    public function getName()
+-    {
+-        return 'comment';
+-    }
+-}
+diff --git a/src/AppBundle/Form/PostType.php b/src/AppBundle/Form/PostType.php
+deleted file mode 100644
+index 4cb34a2..0000000
+--- a/src/AppBundle/Form/PostType.php
++++ /dev/null
+@@ -1,64 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Form;
+-
+-use Symfony\Component\Form\AbstractType;
+-use Symfony\Component\Form\FormBuilderInterface;
+-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+-
+-/**
+- * Defines the form used to create and manipulate blog posts.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class PostType extends AbstractType
+-{
+-    /**
+-     * @param FormBuilderInterface $builder
+-     * @param array                $options
+-     */
+-    public function buildForm(FormBuilderInterface $builder, array $options)
+-    {
+-        // for the full reference of options defined by each form field type
+-        // see http://symfony.com/doc/current/reference/forms/types.html
+-        $builder
+-            ->add('title')
+-            ->add('summary', 'textarea')
+-            ->add('content', 'textarea', array(
+-                'attr' => array('rows' => 20),
+-            ))
+-            ->add('authorEmail', 'email')
+-            ->add('publishedAt', 'datetime', array(
+-                'widget' => 'single_text',
+-            ))
+-        ;
+-    }
+-
+-    /**
+-     * @param OptionsResolverInterface $resolver
+-     */
+-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+-    {
+-        $resolver->setDefaults(array(
+-            'data_class' => 'AppBundle\Entity\Post',
+-        ));
+-    }
+-
+-    /**
+-     * @return string
+-     */
+-    public function getName()
+-    {
+-        return 'post';
+-    }
+-}
+diff --git a/src/AppBundle/Repository/PostRepository.php b/src/AppBundle/Repository/PostRepository.php
+deleted file mode 100644
+index 1a1f13d..0000000
+--- a/src/AppBundle/Repository/PostRepository.php
++++ /dev/null
+@@ -1,39 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Repository;
+-
+-use Doctrine\ORM\EntityRepository;
+-use AppBundle\Entity\Post;
+-
+-/**
+- * This custom Doctrine repository contains some methods which are useful when
+- * querying for blog post information.
+- * See http://symfony.com/doc/current/book/doctrine.html#custom-repository-classes
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class PostRepository extends EntityRepository
+-{
+-    public function findLatest($limit = Post::NUM_ITEMS)
+-    {
+-        return $this
+-            ->createQueryBuilder('p')
+-            ->select('p')
+-            ->where('p.publishedAt <= :now')->setParameter('now', new \DateTime())
+-            ->orderBy('p.publishedAt', 'DESC')
+-            ->setMaxResults($limit)
+-            ->getQuery()
+-            ->getResult()
+-        ;
+-    }
+-}
+diff --git a/src/AppBundle/Repository/UserRepository.php b/src/AppBundle/Repository/UserRepository.php
+deleted file mode 100644
+index d014ebc..0000000
+--- a/src/AppBundle/Repository/UserRepository.php
++++ /dev/null
+@@ -1,27 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Repository;
+-
+-use Doctrine\ORM\EntityRepository;
+-
+-/**
+- * This custom Doctrine repository is empty because so far we don't need any custom
+- * method to query for application user information. But it's always a good practice
+- * to define a custom repository that will be used when the application grows.
+- * See http://symfony.com/doc/current/book/doctrine.html#custom-repository-classes
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class UserRepository extends EntityRepository
+-{
+-}
+diff --git a/src/AppBundle/Tests/Controller/Admin/BlogControllerTest.php b/src/AppBundle/Tests/Controller/Admin/BlogControllerTest.php
+deleted file mode 100644
+index 6961533..0000000
+--- a/src/AppBundle/Tests/Controller/Admin/BlogControllerTest.php
++++ /dev/null
+@@ -1,74 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Tests\Controller\Admin;
+-
+-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+-use Symfony\Component\HttpFoundation\Response;
+-use AppBundle\Entity\Post;
+-
+-/**
+- * Functional test for the controllers defined inside the BlogController used
+- * for managing the blog in the backend.
+- * See http://symfony.com/doc/current/book/testing.html#functional-tests
+- *
+- * Whenever you test resources protected by a firewall, consider using the
+- * technique explained in:
+- * http://symfony.com/doc/current/cookbook/testing/http_authentication.html
+- *
+- * Execute the application tests using this command (requires PHPUnit to be installed):
+- *
+- *     $ cd your-symfony-project/
+- *     $ phpunit -c app
+- *
+- */
+-class BlogControllerTest extends WebTestCase
+-{
+-    public function testRegularUsersCannotAccessToTheBackend()
+-    {
+-        $client = static::createClient(array(), array(
+-            'PHP_AUTH_USER' => 'john_user',
+-            'PHP_AUTH_PW'   => 'kitten',
+-        ));
+-
+-        $client->request('GET', '/admin/post/');
+-
+-        $this->assertEquals(Response::HTTP_FORBIDDEN, $client->getResponse()->getStatusCode());
+-    }
+-
+-    public function testAdministratorUsersCanAccessToTheBackend()
+-    {
+-        $client = static::createClient(array(), array(
+-            'PHP_AUTH_USER' => 'anna_admin',
+-            'PHP_AUTH_PW'   => 'kitten',
+-        ));
+-
+-        $client->request('GET', '/admin/post/');
+-
+-        $this->assertEquals(Response::HTTP_OK, $client->getResponse()->getStatusCode());
+-    }
+-
+-    public function testIndex()
+-    {
+-        $client = static::createClient(array(), array(
+-            'PHP_AUTH_USER' => 'anna_admin',
+-            'PHP_AUTH_PW'   => 'kitten',
+-        ));
+-
+-        $crawler = $client->request('GET', '/admin/post/');
+-
+-        $this->assertCount(
+-            Post::NUM_ITEMS,
+-            $crawler->filter('body#admin_post_index #main tbody tr'),
+-            'The backend homepage displays the right number of posts.'
+-        );
+-    }
+-}
+diff --git a/src/AppBundle/Tests/Controller/BlogControllerTest.php b/src/AppBundle/Tests/Controller/BlogControllerTest.php
+deleted file mode 100644
+index ee915ee..0000000
+--- a/src/AppBundle/Tests/Controller/BlogControllerTest.php
++++ /dev/null
+@@ -1,40 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Tests\Controller;
+-
+-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+-use AppBundle\Entity\Post;
+-
+-/**
+- * Functional test for the controllers defined inside BlogController.
+- * See http://symfony.com/doc/current/book/testing.html#functional-tests
+- *
+- * Execute the application tests using this command (requires PHPUnit to be installed):
+- *
+- *     $ cd your-symfony-project/
+- *     $ phpunit -c app
+- *
+- */
+-class BlogControllerTest extends WebTestCase
+-{
+-    public function testIndex()
+-    {
+-        $client = static::createClient();
+-        $crawler = $client->request('GET', '/blog/');
+-
+-        $this->assertCount(
+-            Post::NUM_ITEMS,
+-            $crawler->filter('article.post'),
+-            'The homepage displays the right number of posts.'
+-        );
+-    }
+-}
+diff --git a/src/AppBundle/Tests/Controller/DefaultControllerTest.php b/src/AppBundle/Tests/Controller/DefaultControllerTest.php
+deleted file mode 100644
+index 058191e..0000000
+--- a/src/AppBundle/Tests/Controller/DefaultControllerTest.php
++++ /dev/null
+@@ -1,87 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Tests\Controller;
+-
+-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+-
+-/**
+- * Functional test that implements a "smoke test" of all the public and secure
+- * URLs of the application.
+- * See http://symfony.com/doc/current/best_practices/tests.html#functional-tests.
+- *
+- * Execute the application tests using this command (requires PHPUnit to be installed):
+- *
+- *     $ cd your-symfony-project/
+- *     $ phpunit -c app
+- *
+- */
+-class DefaultControllerTest extends WebTestCase
+-{
+-    /**
+-     * PHPUnit's data providers allow to execute the same tests repeated times
+-     * using a different set of data each time.
+-     * See http://symfony.com/doc/current/cookbook/form/unit_testing.html#testing-against-different-sets-of-data.
+-     *
+-     * @dataProvider getPublicUrls
+-     */
+-    public function testPublicUrls($url)
+-    {
+-        $client = self::createClient();
+-        $client->request('GET', $url);
+-
+-        $this->assertTrue(
+-            $client->getResponse()->isSuccessful(),
+-            sprintf('The %s public URL loads correctly.', $url)
+-        );
+-    }
+-
+-    /**
+-     * The application contains a lot of secure URLs which shouldn't be
+-     * publicly accessible. This tests ensures that whenever a user tries to
+-     * access one of those pages, a redirection to the login form is performed.
+-     *
+-     * @dataProvider getSecureUrls
+-     */
+-    public function testSecureUrls($url)
+-    {
+-        $client = self::createClient();
+-        $client->request('GET', $url);
+-
+-        $this->assertTrue($client->getResponse()->isRedirect());
+-
+-        $this->assertEquals(
+-            'http://localhost/login',
+-            $client->getResponse()->getTargetUrl(),
+-            sprintf('The %s secure URL redirects to the login form.', $url)
+-        );
+-    }
+-
+-    public function getPublicUrls()
+-    {
+-        return array(
+-            array('/'),
+-            array('/blog/'),
+-            array('/blog/posts/morbi-tempus-commodo-mattis'),
+-            array('/login'),
+-        );
+-    }
+-
+-    public function getSecureUrls()
+-    {
+-        return array(
+-            array('/admin/post/'),
+-            array('/admin/post/new'),
+-            array('/admin/post/1'),
+-            array('/admin/post/1/edit'),
+-        );
+-    }
+-}
+diff --git a/src/AppBundle/Tests/Utils/SluggerTest.php b/src/AppBundle/Tests/Utils/SluggerTest.php
+deleted file mode 100644
+index 6f67724..0000000
+--- a/src/AppBundle/Tests/Utils/SluggerTest.php
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace Tests\Utils;
+-
+-use AppBundle\Utils\Slugger;
+-
+-/**
+- * Unit test for the application utils.
+- * See http://symfony.com/doc/current/book/testing.html#unit-tests
+- *
+- * Execute the application tests using this command (requires PHPUnit to be installed):
+- *
+- *     $ cd your-symfony-project/
+- *     $ phpunit -c app
+- *
+- */
+-class SluggerTest extends \PHPUnit_Framework_TestCase
+-{
+-    /**
+-     * @dataProvider getSlugs
+-     */
+-    public function testSlugify($string, $slug)
+-    {
+-        $slugger = new Slugger();
+-        $result = $slugger->slugify($string);
+-
+-        $this->assertEquals($slug, $result);
+-    }
+-
+-    public function getSlugs()
+-    {
+-        return array(
+-            array('Lorem Ipsum'     , 'lorem-ipsum'),
+-            array('  Lorem Ipsum  ' , 'lorem-ipsum'),
+-            array(' lOrEm  iPsUm  ' , 'lorem-ipsum'),
+-            array('!Lorem Ipsum!'   , 'lorem-ipsum'),
+-            array('lorem-ipsum'     , 'lorem-ipsum'),
+-        );
+-    }
+-}
+diff --git a/src/AppBundle/Twig/AppExtension.php b/src/AppBundle/Twig/AppExtension.php
+deleted file mode 100644
+index 62b7999..0000000
+--- a/src/AppBundle/Twig/AppExtension.php
++++ /dev/null
+@@ -1,54 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Twig;
+-
+-use AppBundle\Utils\Markdown;
+-
+-/**
+- * This Twig extension adds a new 'md2html' filter to easily transform Markdown
+- * contents into HTML contents inside Twig templates.
+- * See http://symfony.com/doc/current/cookbook/templating/twig_extension.html
+- *
+- * In addition to creating the Twig extension class, before using it you must also
+- * register it as a service. See app/config/services.yml file for details.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class AppExtension extends \Twig_Extension
+-{
+-    private $parser;
+-
+-    public function __construct(Markdown $parser)
+-    {
+-        $this->parser = $parser;
+-    }
+-
+-    public function getFilters()
+-    {
+-        return array(
+-            new \Twig_SimpleFilter('md2html', array($this, 'markdownToHtml'), array('is_safe' => array('html'))),
+-        );
+-    }
+-
+-    public function markdownToHtml($content)
+-    {
+-        return $this->parser->toHtml($content);
+-    }
+-
+-    // the name of the Twig extension must be unique in the application. Consider
+-    // using 'app.extension' if you only have one Twig extension in your application.
+-    public function getName()
+-    {
+-        return 'app.extension';
+-    }
+-}
+diff --git a/src/AppBundle/Twig/SourceCodeExtension.php b/src/AppBundle/Twig/SourceCodeExtension.php
+deleted file mode 100644
+index 0c422f1..0000000
+--- a/src/AppBundle/Twig/SourceCodeExtension.php
++++ /dev/null
+@@ -1,142 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Twig;
+-
+-/**
+- * CAUTION: this is an extremely advanced Twig extension. It's used to get the
+- * source code of the controller and the template used to render the current
+- * page. If you are starting with Symfony, don't look at this code and consider
+- * studying instead the code of the src/AppBundle/Twig/AppExtension.php extension.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class SourceCodeExtension extends \Twig_Extension
+-{
+-    protected $loader;
+-    protected $controller;
+-    protected $template;
+-
+-    public function __construct(\Twig_LoaderInterface $loader)
+-    {
+-        $this->loader = $loader;
+-    }
+-
+-    public function setController($controller)
+-    {
+-        $this->controller = $controller;
+-    }
+-
+-    public function getFunctions()
+-    {
+-        return array(
+-            new \Twig_SimpleFunction('show_source_code', array($this, 'showSourceCode'), array('is_safe' => array('html'), 'needs_environment' => true)),
+-        );
+-    }
+-
+-    public function showSourceCode(\Twig_Environment $twig, $template)
+-    {
+-        $this->template = $template;
+-
+-        return $twig->render('default/_source_code.html.twig', array(
+-            'controller_source_code' => $this->getControllerCode(),
+-            'controller_file_path'   => $this->getControllerRelativePath(),
+-            'template_source_code'   => $this->getTemplateCode(),
+-            'template_file_path'     => $this->getTemplateRelativePath(),
+-        ));
+-    }
+-
+-    private function getControllerCode()
+-    {
+-        // this happens for example for exceptions (404 errors, etc.)
+-        if (null === $this->controller) {
+-            return 'Not available';
+-        }
+-
+-        $className = get_class($this->controller[0]);
+-        $class = new \ReflectionClass($className);
+-        $method = $class->getMethod($this->controller[1]);
+-
+-        $classCode = file($class->getFilename());
+-        $methodCode = array_slice($classCode, $method->getStartline() - 1, $method->getEndLine() - $method->getStartline() + 1);
+-        $controllerCode = '    '.$method->getDocComment()."\n".implode('', $methodCode);
+-
+-        return $this->unindentCode($controllerCode);
+-    }
+-
+-    private function getControllerRelativePath()
+-    {
+-        // this happens for example for exceptions (404 errors, etc.)
+-        if (null === $this->controller) {
+-            return '';
+-        }
+-
+-        $className = get_class($this->controller[0]);
+-        $class = new \ReflectionClass($className);
+-
+-        $absolutePath = $class->getFilename();
+-        $pathParts = explode(DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR, $absolutePath);
+-        $relativePath = 'src'.DIRECTORY_SEPARATOR.$pathParts[1];
+-
+-        return $relativePath;
+-    }
+-
+-    private function getTemplateCode()
+-    {
+-        return $this->loader->getSource($this->template->getTemplateName());
+-    }
+-
+-    /**
+-     * The logic implemented in this method is solely developed for the Symfony
+-     * Demo application and cannot be used as a general purpose solution.
+-     * Specifically, this logic won't work for templates that use a namespaced path
+-     * (e.g. @WebProfiler/Collector/time.html.twig) or any loader different from
+-     * Twig_Loader_Filesystem (e.g. TwigBundle:Exception:exception.txt.twig notation
+-     * or an anonymous template created by the {% embed %} tag).
+-     */
+-    private function getTemplateRelativePath()
+-    {
+-        return 'app/Resources/views/'.$this->template->getTemplateName();
+-    }
+-
+-    /**
+-     * Utility method that "unindents" the given $code when all its lines start
+-     * with a tabulation of four white spaces.
+-     *
+-     * @param  string $code
+-     * @return string
+-     */
+-    private function unindentCode($code)
+-    {
+-        $formattedCode = '';
+-        $codeLines = explode("\n", $code);
+-
+-        $indentedLines = array_filter($codeLines, function ($lineOfCode) {
+-            return '' === $lineOfCode || '    ' === substr($lineOfCode, 0, 4);
+-        });
+-
+-        if (count($indentedLines) === count($codeLines)) {
+-            $formattedCode = array_map(function ($lineOfCode) { return substr($lineOfCode, 4); }, $codeLines);
+-            $formattedCode = implode("\n", $formattedCode);
+-        } else {
+-            $formattedCode = $code;
+-        }
+-
+-        return $formattedCode;
+-    }
+-
+-    // the name of the Twig extension must be unique in the application
+-    public function getName()
+-    {
+-        return 'app.source_code_extension';
+-    }
+-}
+diff --git a/src/AppBundle/Utils/Markdown.php b/src/AppBundle/Utils/Markdown.php
+deleted file mode 100644
+index 422a343..0000000
+--- a/src/AppBundle/Utils/Markdown.php
++++ /dev/null
+@@ -1,37 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Utils;
+-
+-/**
+- * This class is a light interface between an external Markdown parser library
+- * and the application. It's generally recommended to create these light interfaces
+- * to decouple your application from the implementation details of the third-party library.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class Markdown
+-{
+-    private $parser;
+-
+-    public function __construct()
+-    {
+-        $this->parser = new \Parsedown();
+-    }
+-
+-    public function toHtml($text)
+-    {
+-        $html = $this->parser->text($text);
+-
+-        return $html;
+-    }
+-}
+diff --git a/src/AppBundle/Utils/Slugger.php b/src/AppBundle/Utils/Slugger.php
+deleted file mode 100644
+index 9ffaa9b..0000000
+--- a/src/AppBundle/Utils/Slugger.php
++++ /dev/null
+@@ -1,27 +0,0 @@
+-<?php
+-
+-/*
+- * This file is part of the Symfony package.
+- *
+- * (c) Fabien Potencier <fabien@symfony.com>
+- *
+- * For the full copyright and license information, please view the LICENSE
+- * file that was distributed with this source code.
+- */
+-
+-namespace AppBundle\Utils;
+-
+-/**
+- * This class is used to provide an example of integrating simple classes as
+- * services into a Symfony application.
+- *
+- * @author Ryan Weaver <weaverryan@gmail.com>
+- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
+- */
+-class Slugger
+-{
+-    public function slugify($string)
+-    {
+-        return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(strip_tags($string))), '-');
+-    }
+-}

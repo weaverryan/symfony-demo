@@ -1,0 +1,487 @@
+diff --git a/app/AppBundle.php b/app/AppBundle.php
+index 0058860..8fc3b07 100644
+--- a/app/AppBundle.php
++++ b/app/AppBundle.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle;
++namespace App;
+ 
+ use Symfony\Component\HttpKernel\Bundle\Bundle;
+ 
+diff --git a/app/AppKernel.php b/app/AppKernel.php
+index b2dbc68..18b4c0b 100644
+--- a/app/AppKernel.php
++++ b/app/AppKernel.php
+@@ -17,7 +17,7 @@ class AppKernel extends Kernel
+             new Doctrine\Bundle\DoctrineBundle\DoctrineBundle(),
+             new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
+             new Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle(),
+-            new AppBundle\AppBundle(),
++            new App\AppBundle(),
+         );
+ 
+         if (in_array($this->getEnvironment(), array('dev', 'test'))) {
+diff --git a/app/Command/AddUserCommand.php b/app/Command/AddUserCommand.php
+index 6b13664..7edc42a 100644
+--- a/app/Command/AddUserCommand.php
++++ b/app/Command/AddUserCommand.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Command;
++namespace App\Command;
+ 
+ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+ use Symfony\Component\Console\Input\InputArgument;
+@@ -18,7 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
+ use Symfony\Component\Console\Output\OutputInterface;
+ use Symfony\Component\Console\Question\Question;
+ use Doctrine\Common\Persistence\ObjectManager;
+-use AppBundle\Entity\User;
++use App\Entity\User;
+ 
+ /**
+  * A command console that creates users and stores them in the database.
+diff --git a/app/Command/ListUsersCommand.php b/app/Command/ListUsersCommand.php
+index 4cd1bbc..f528c56 100644
+--- a/app/Command/ListUsersCommand.php
++++ b/app/Command/ListUsersCommand.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Command;
++namespace App\Command;
+ 
+ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+ use Symfony\Component\Console\Helper\Table;
+diff --git a/app/Controller/Admin/BlogController.php b/app/Controller/Admin/BlogController.php
+index 841d6e9..8c72c36 100644
+--- a/app/Controller/Admin/BlogController.php
++++ b/app/Controller/Admin/BlogController.php
+@@ -9,15 +9,15 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Controller\Admin;
++namespace App\Controller\Admin;
+ 
+-use AppBundle\Form\PostType;
++use App\Form\PostType;
+ use Symfony\Component\HttpFoundation\Request;
+ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+-use AppBundle\Entity\Post;
++use App\Entity\Post;
+ 
+ /**
+  * Controller used to manage blog contents in the backend.
+@@ -150,7 +150,7 @@ class BlogController extends Controller
+      *
+      * The Security annotation value is an expression (if it evaluates to false,
+      * the authorization mechanism will prevent the user accessing this resource).
+-     * The isAuthor() method is defined in the AppBundle\Entity\Post entity.
++     * The isAuthor() method is defined in the App\Entity\Post entity.
+      */
+     public function deleteAction(Request $request, Post $post)
+     {
+diff --git a/app/Controller/BlogController.php b/app/Controller/BlogController.php
+index fa3a7ba..d7c5a67 100644
+--- a/app/Controller/BlogController.php
++++ b/app/Controller/BlogController.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Controller;
++namespace App\Controller;
+ 
+ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+@@ -18,9 +18,9 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+ use Symfony\Component\HttpFoundation\Request;
+ use Symfony\Component\HttpFoundation\Response;
+-use AppBundle\Entity\Post;
+-use AppBundle\Entity\Comment;
+-use AppBundle\Form\CommentType;
++use App\Entity\Post;
++use App\Entity\Comment;
++use App\Form\CommentType;
+ 
+ /**
+  * Controller used to manage blog contents in the public part of the site.
+diff --git a/app/Controller/SecurityController.php b/app/Controller/SecurityController.php
+index e203bd8..653aff0 100644
+--- a/app/Controller/SecurityController.php
++++ b/app/Controller/SecurityController.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Controller;
++namespace App\Controller;
+ 
+ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+ use Symfony\Component\HttpFoundation\Request;
+diff --git a/app/DataFixtures/ORM/LoadFixtures.php b/app/DataFixtures/ORM/LoadFixtures.php
+index 43d99de..51beebc 100644
+--- a/app/DataFixtures/ORM/LoadFixtures.php
++++ b/app/DataFixtures/ORM/LoadFixtures.php
+@@ -9,11 +9,11 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\DataFixtures\ORM;
++namespace App\DataFixtures\ORM;
+ 
+-use AppBundle\Entity\User;
+-use AppBundle\Entity\Post;
+-use AppBundle\Entity\Comment;
++use App\Entity\User;
++use App\Entity\Post;
++use App\Entity\Comment;
+ use Doctrine\Common\DataFixtures\FixtureInterface;
+ use Doctrine\Common\Persistence\ObjectManager;
+ use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+diff --git a/app/Entity/Comment.php b/app/Entity/Comment.php
+index 1db8ce1..221d4fc 100644
+--- a/app/Entity/Comment.php
++++ b/app/Entity/Comment.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Entity;
++namespace App\Entity;
+ 
+ use Doctrine\ORM\Mapping as ORM;
+ use Symfony\Component\Validator\Constraints as Assert;
+diff --git a/app/Entity/Post.php b/app/Entity/Post.php
+index 3abefec..e42334b 100644
+--- a/app/Entity/Post.php
++++ b/app/Entity/Post.php
+@@ -1,13 +1,13 @@
+ <?php
+ 
+-namespace AppBundle\Entity;
++namespace App\Entity;
+ 
+ use Doctrine\ORM\Mapping as ORM;
+ use Doctrine\Common\Collections\ArrayCollection;
+ use Symfony\Component\Validator\Constraints as Assert;
+ 
+ /**
+- * @ORM\Entity(repositoryClass="AppBundle\Repository\PostRepository")
++ * @ORM\Entity(repositoryClass="App\Repository\PostRepository")
+  *
+  * Defines the properties of the Post entity to represent the blog posts.
+  * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
+diff --git a/app/Entity/User.php b/app/Entity/User.php
+index 6cfa3c4..43ff282 100644
+--- a/app/Entity/User.php
++++ b/app/Entity/User.php
+@@ -1,12 +1,12 @@
+ <?php
+ 
+-namespace AppBundle\Entity;
++namespace App\Entity;
+ 
+ use Doctrine\ORM\Mapping as ORM;
+ use Symfony\Component\Security\Core\User\UserInterface;
+ 
+ /**
+- * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
++ * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
+  *
+  * Defines the properties of the User entity to represent the application users.
+  * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
+diff --git a/app/EventListener/ControllerListener.php b/app/EventListener/ControllerListener.php
+index d57cdf9..4ac5dc1 100644
+--- a/app/EventListener/ControllerListener.php
++++ b/app/EventListener/ControllerListener.php
+@@ -9,11 +9,11 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\EventListener;
++namespace App\EventListener;
+ 
+ use Symfony\Component\HttpKernel\HttpKernelInterface;
+ use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+-use AppBundle\Twig\SourceCodeExtension;
++use App\Twig\SourceCodeExtension;
+ 
+ /**
+  * Defines the method that 'listens' to the 'kernel.controller' event, which is
+diff --git a/app/Form/CommentType.php b/app/Form/CommentType.php
+index 2c15df0..717130b 100644
+--- a/app/Form/CommentType.php
++++ b/app/Form/CommentType.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Form;
++namespace App\Form;
+ 
+ use Symfony\Component\Form\AbstractType;
+ use Symfony\Component\Form\FormBuilderInterface;
+@@ -43,7 +43,7 @@ class CommentType extends AbstractType
+     public function setDefaultOptions(OptionsResolverInterface $resolver)
+     {
+         $resolver->setDefaults(array(
+-            'data_class' => 'AppBundle\Entity\Comment',
++            'data_class' => 'App\Entity\Comment',
+         ));
+     }
+ 
+diff --git a/app/Form/PostType.php b/app/Form/PostType.php
+index 4cb34a2..a772ba9 100644
+--- a/app/Form/PostType.php
++++ b/app/Form/PostType.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Form;
++namespace App\Form;
+ 
+ use Symfony\Component\Form\AbstractType;
+ use Symfony\Component\Form\FormBuilderInterface;
+@@ -50,7 +50,7 @@ class PostType extends AbstractType
+     public function setDefaultOptions(OptionsResolverInterface $resolver)
+     {
+         $resolver->setDefaults(array(
+-            'data_class' => 'AppBundle\Entity\Post',
++            'data_class' => 'App\Entity\Post',
+         ));
+     }
+ 
+diff --git a/app/Repository/PostRepository.php b/app/Repository/PostRepository.php
+index 1a1f13d..4bc04c0 100644
+--- a/app/Repository/PostRepository.php
++++ b/app/Repository/PostRepository.php
+@@ -9,10 +9,10 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Repository;
++namespace App\Repository;
+ 
+ use Doctrine\ORM\EntityRepository;
+-use AppBundle\Entity\Post;
++use App\Entity\Post;
+ 
+ /**
+  * This custom Doctrine repository contains some methods which are useful when
+diff --git a/app/Repository/UserRepository.php b/app/Repository/UserRepository.php
+index d014ebc..140185d 100644
+--- a/app/Repository/UserRepository.php
++++ b/app/Repository/UserRepository.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Repository;
++namespace App\Repository;
+ 
+ use Doctrine\ORM\EntityRepository;
+ 
+diff --git a/app/Tests/Controller/Admin/BlogControllerTest.php b/app/Tests/Controller/Admin/BlogControllerTest.php
+index 6961533..2cdcd87 100644
+--- a/app/Tests/Controller/Admin/BlogControllerTest.php
++++ b/app/Tests/Controller/Admin/BlogControllerTest.php
+@@ -9,11 +9,11 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Tests\Controller\Admin;
++namespace App\Tests\Controller\Admin;
+ 
+ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+ use Symfony\Component\HttpFoundation\Response;
+-use AppBundle\Entity\Post;
++use App\Entity\Post;
+ 
+ /**
+  * Functional test for the controllers defined inside the BlogController used
+diff --git a/app/Tests/Controller/BlogControllerTest.php b/app/Tests/Controller/BlogControllerTest.php
+index ee915ee..6b077eb 100644
+--- a/app/Tests/Controller/BlogControllerTest.php
++++ b/app/Tests/Controller/BlogControllerTest.php
+@@ -9,10 +9,10 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Tests\Controller;
++namespace App\Tests\Controller;
+ 
+ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+-use AppBundle\Entity\Post;
++use App\Entity\Post;
+ 
+ /**
+  * Functional test for the controllers defined inside BlogController.
+diff --git a/app/Tests/Controller/DefaultControllerTest.php b/app/Tests/Controller/DefaultControllerTest.php
+index 058191e..74aa844 100644
+--- a/app/Tests/Controller/DefaultControllerTest.php
++++ b/app/Tests/Controller/DefaultControllerTest.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Tests\Controller;
++namespace App\Tests\Controller;
+ 
+ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+ 
+diff --git a/app/Tests/Utils/SluggerTest.php b/app/Tests/Utils/SluggerTest.php
+index 6f67724..20cb13d 100644
+--- a/app/Tests/Utils/SluggerTest.php
++++ b/app/Tests/Utils/SluggerTest.php
+@@ -11,7 +11,7 @@
+ 
+ namespace Tests\Utils;
+ 
+-use AppBundle\Utils\Slugger;
++use App\Utils\Slugger;
+ 
+ /**
+  * Unit test for the application utils.
+diff --git a/app/Twig/AppExtension.php b/app/Twig/AppExtension.php
+index 62b7999..2da160b 100644
+--- a/app/Twig/AppExtension.php
++++ b/app/Twig/AppExtension.php
+@@ -9,9 +9,9 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Twig;
++namespace App\Twig;
+ 
+-use AppBundle\Utils\Markdown;
++use App\Utils\Markdown;
+ 
+ /**
+  * This Twig extension adds a new 'md2html' filter to easily transform Markdown
+diff --git a/app/Twig/SourceCodeExtension.php b/app/Twig/SourceCodeExtension.php
+index 84b8c7c..f918ec9 100644
+--- a/app/Twig/SourceCodeExtension.php
++++ b/app/Twig/SourceCodeExtension.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Twig;
++namespace App\Twig;
+ 
+ /**
+  * CAUTION: this is an extremely advanced Twig extension. It's used to get the
+@@ -84,8 +84,8 @@ class SourceCodeExtension extends \Twig_Extension
+         $class = new \ReflectionClass($className);
+ 
+         $absolutePath = $class->getFilename();
+-        $pathParts = explode(DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR, $absolutePath);
+-        $relativePath = 'src'.DIRECTORY_SEPARATOR.$pathParts[1];
++        $pathParts = explode(DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR, $absolutePath);
++        $relativePath = 'app'.DIRECTORY_SEPARATOR.$pathParts[1];
+ 
+         return $relativePath;
+     }
+diff --git a/app/Utils/Markdown.php b/app/Utils/Markdown.php
+index 422a343..5fff7ee 100644
+--- a/app/Utils/Markdown.php
++++ b/app/Utils/Markdown.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Utils;
++namespace App\Utils;
+ 
+ /**
+  * This class is a light interface between an external Markdown parser library
+diff --git a/app/Utils/Slugger.php b/app/Utils/Slugger.php
+index 9ffaa9b..e0de21d 100644
+--- a/app/Utils/Slugger.php
++++ b/app/Utils/Slugger.php
+@@ -9,7 +9,7 @@
+  * file that was distributed with this source code.
+  */
+ 
+-namespace AppBundle\Utils;
++namespace App\Utils;
+ 
+ /**
+  * This class is used to provide an example of integrating simple classes as
+diff --git a/app/config/security.yml b/app/config/security.yml
+index d75494c..bfc7af8 100644
+--- a/app/config/security.yml
++++ b/app/config/security.yml
+@@ -2,11 +2,11 @@ security:
+     encoders:
+         # Our user class and the algorithm we'll use to encode passwords
+         # http://symfony.com/doc/current/book/security.html#encoding-the-user-s-password
+-        AppBundle\Entity\User: bcrypt
++        App\Entity\User: bcrypt
+ 
+     providers:
+         # in this example, users are stored via Doctrine in the database
+-        # To see the users at src/AppBundle/DataFixtures/ORM/LoadFixtures.php
++        # To see the users at app/DataFixtures/ORM/LoadFixtures.php
+         # To load users from somewhere else: http://symfony.com/doc/current/cookbook/security/custom_provider.html
+         database_users:
+             entity: { class: AppBundle:User, property: username }
+diff --git a/app/config/services.yml b/app/config/services.yml
+index c543700..b6d6226 100644
+--- a/app/config/services.yml
++++ b/app/config/services.yml
+@@ -5,27 +5,27 @@ services:
+     # first we define some basic services to make these utilities available in
+     # the entire application
+     slugger:
+-        class: AppBundle\Utils\Slugger
++        class: App\Utils\Slugger
+ 
+     markdown:
+-        class: AppBundle\Utils\Markdown
++        class: App\Utils\Markdown
+ 
+     # this is the Twig extension that creates the 'md2html' filter to transform
+     # Markdown contents into HTML contents
+     app.twig.app_extension:
+-        class:     AppBundle\Twig\AppExtension
++        class:     App\Twig\AppExtension
+         arguments: ["@markdown"]
+         tags:
+             - { name: twig.extension }
+ 
+     app.twig.source_code_extension:
+-        class:     AppBundle\Twig\SourceCodeExtension
++        class:     App\Twig\SourceCodeExtension
+         arguments: ["@twig.loader"]
+         tags:
+             - { name: twig.extension }
+ 
+     app.controller_listener:
+-        class:     AppBundle\EventListener\ControllerListener
++        class:     App\EventListener\ControllerListener
+         arguments: ["@app.twig.source_code_extension"]
+         tags:
+             - { name: 'kernel.event_listener', event: kernel.controller, method: registerCurrentController }
+@@ -37,7 +37,7 @@ services:
+     # post_repository:
+     #     class:     Doctrine\ORM\EntityRepository
+     #     factory:   ["@doctrine.orm.entity_manager", getRepository]
+-    #     arguments: [AppBundle\Entity\Post]
++    #     arguments: [App\Entity\Post]
+     #
+     # // traditional code inside a controller
+     # $em = $this->getDoctrine()->getManager();
