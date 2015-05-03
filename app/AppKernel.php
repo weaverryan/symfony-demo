@@ -33,4 +33,19 @@ class AppKernel extends Kernel
     {
         $loader->load(__DIR__.'/config/config_'.$this->getEnvironment().'.yml');
     }
+
+    /**
+     * There is currently no way to "locate resources" in the kernel root
+     * directory. This is needed, for example, in routing.yml to load
+     * annotations from the Controller directory. This code "hacks in"
+     * some functionality that would need to be added to core
+     */
+    public function locateResource($name, $dir = null, $first = true)
+    {
+        if (strpos($name, '@kernel_root') === 0) {
+            return __DIR__.'/'.substr($name, 12);
+        }
+
+        return parent::locateResource($name, $dir, $first);
+    }
 }
