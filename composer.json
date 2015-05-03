@@ -4,7 +4,8 @@
     "type": "project",
     "description": "Symfony Demo Application",
     "autoload": {
-        "psr-0": { "": "src/", "SymfonyStandard": "app/" }
+        "psr-0": { "": "src/", "SymfonyStandard": "app/" },
+        "psr-4": { "App\\": "app/" }
     },
     "require": {
         "php"                                  : ">=5.3.3",
