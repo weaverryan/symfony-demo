@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle\DataFixtures\ORM;
+namespace App\DataFixtures\ORM;
 
-use AppBundle\Entity\User;
-use AppBundle\Entity\Post;
-use AppBundle\Entity\Comment;
+use App\Entity\User;
+use App\Entity\Post;
+use App\Entity\Comment;
 use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;

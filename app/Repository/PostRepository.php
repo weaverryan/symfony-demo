@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle\Repository;
+namespace App\Repository;
 
 use Doctrine\ORM\EntityRepository;
-use AppBundle\Entity\Post;
+use App\Entity\Post;
 
 /**
  * This custom Doctrine repository contains some methods which are useful when

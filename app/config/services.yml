@@ -5,27 +5,27 @@ services:
     # first we define some basic services to make these utilities available in
     # the entire application
     slugger:
-        class: AppBundle\Utils\Slugger
+        class: App\Utils\Slugger
 
     markdown:
-        class: AppBundle\Utils\Markdown
+        class: App\Utils\Markdown
 
     # this is the Twig extension that creates the 'md2html' filter to transform
     # Markdown contents into HTML contents
     app.twig.app_extension:
-        class:     AppBundle\Twig\AppExtension
+        class:     App\Twig\AppExtension
         arguments: ["@markdown"]
         tags:
             - { name: twig.extension }
 
     app.twig.source_code_extension:
-        class:     AppBundle\Twig\SourceCodeExtension
+        class:     App\Twig\SourceCodeExtension
         arguments: ["@twig.loader"]
         tags:
             - { name: twig.extension }
 
     app.controller_listener:
-        class:     AppBundle\EventListener\ControllerListener
+        class:     App\EventListener\ControllerListener
         arguments: ["@app.twig.source_code_extension"]
         tags:
             - { name: 'kernel.event_listener', event: kernel.controller, method: registerCurrentController }
@@ -37,7 +37,7 @@ services:
     # post_repository:
     #     class:     Doctrine\ORM\EntityRepository
     #     factory:   ["@doctrine.orm.entity_manager", getRepository]
-    #     arguments: [AppBundle\Entity\Post]
+    #     arguments: [App\Entity\Post]
     #
     # // traditional code inside a controller
     # $em = $this->getDoctrine()->getManager();

@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle\Twig;
+namespace App\Twig;
 
-use AppBundle\Utils\Markdown;
+use App\Utils\Markdown;
 
 /**
  * This Twig extension adds a new 'md2html' filter to easily transform Markdown

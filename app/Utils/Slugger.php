@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle\Utils;
+namespace App\Utils;
 
 /**
  * This class is used to provide an example of integrating simple classes as

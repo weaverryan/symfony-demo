@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle\Tests\Controller\Admin;
+namespace App\Tests\Controller\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
-use AppBundle\Entity\Post;
+use App\Entity\Post;
 
 /**
  * Functional test for the controllers defined inside the BlogController used

@@ -11,7 +11,7 @@
 
 namespace Tests\Utils;
 
-use AppBundle\Utils\Slugger;
+use App\Utils\Slugger;
 
 /**
  * Unit test for the application utils.

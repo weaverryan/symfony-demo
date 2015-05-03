@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle;
+namespace App;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

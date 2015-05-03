@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace AppBundle\Twig;
+namespace App\Twig;
 
 /**
  * CAUTION: this is an extremely advanced Twig extension. It's used to get the
@@ -84,8 +84,8 @@ class SourceCodeExtension extends \Twig_Extension
         $class = new \ReflectionClass($className);
 
         $absolutePath = $class->getFilename();
-        $pathParts = explode(DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR, $absolutePath);
-        $relativePath = 'src'.DIRECTORY_SEPARATOR.$pathParts[1];
+        $pathParts = explode(DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR, $absolutePath);
+        $relativePath = 'app'.DIRECTORY_SEPARATOR.$pathParts[1];
 
         return $relativePath;
     }

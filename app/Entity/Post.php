@@ -1,13 +1,13 @@
 <?php
 
-namespace AppBundle\Entity;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Entity(repositoryClass="AppBundle\Repository\PostRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\PostRepository")
  *
  * Defines the properties of the Post entity to represent the blog posts.
  * See http://symfony.com/doc/current/book/doctrine.html#creating-an-entity-class
