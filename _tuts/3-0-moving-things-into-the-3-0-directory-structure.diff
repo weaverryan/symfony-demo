@@ -768,6 +768,9 @@ index dbaafa8..0000000
 -        }
 -    }
 -}
+diff --git a/app/cache/.gitkeep b/app/cache/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
 diff --git a/app/check.php b/app/check.php
 deleted file mode 100644
 index 90bad4a..0000000
@@ -949,6 +952,60 @@ index fa6a36e..0000000
 -$kernel = new AppKernel($env, $debug);
 -$application = new Application($kernel);
 -$application->run($input);
+diff --git a/app/logs/.gitkeep b/app/logs/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/app/phpunit.xml.dist b/app/phpunit.xml.dist
+deleted file mode 100644
+index b59e0a0..0000000
+--- a/app/phpunit.xml.dist
++++ /dev/null
+@@ -1,45 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-
+-<!-- http://phpunit.de/manual/current/en/appendixes.configuration.html -->
+-<phpunit
+-    backupGlobals               = "false"
+-    backupStaticAttributes      = "false"
+-    colors                      = "true"
+-    convertErrorsToExceptions   = "true"
+-    convertNoticesToExceptions  = "true"
+-    convertWarningsToExceptions = "true"
+-    processIsolation            = "false"
+-    stopOnFailure               = "false"
+-    syntaxCheck                 = "false"
+-    bootstrap                   = "bootstrap.php.cache" >
+-
+-    <testsuites>
+-        <testsuite name="Project Test Suite">
+-            <directory>../app/Tests</directory>
+-            <directory>../src/*Bundle/Tests</directory>
+-            <directory>../src/*/*Bundle/Tests</directory>
+-            <directory>../src/*/Bundle/*Bundle/Tests</directory>
+-        </testsuite>
+-    </testsuites>
+-
+-    <!--
+-    <php>
+-        <server name="KERNEL_DIR" value="/path/to/your/app/" />
+-    </php>
+-    -->
+-
+-    <filter>
+-        <whitelist>
+-            <directory>../src</directory>
+-            <exclude>
+-                <directory>../src/*Bundle/Resources</directory>
+-                <directory>../src/*Bundle/Tests</directory>
+-                <directory>../src/*/*Bundle/Resources</directory>
+-                <directory>../src/*/*Bundle/Tests</directory>
+-                <directory>../src/*/Bundle/*Bundle/Resources</directory>
+-                <directory>../src/*/Bundle/*Bundle/Tests</directory>
+-            </exclude>
+-        </whitelist>
+-    </filter>
+-
+-</phpunit>
 diff --git a/bin/console b/bin/console
 new file mode 100755
 index 0000000..cd7b47d
@@ -1146,6 +1203,57 @@ index 1ccb5e2..017fe48 100644
          "incenteev-parameters": {
              "file": "app/config/parameters.yml"
          }
+diff --git a/phpunit.xml.dist b/phpunit.xml.dist
+new file mode 100644
+index 0000000..b59e0a0
+--- /dev/null
++++ b/phpunit.xml.dist
+@@ -0,0 +1,45 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<!-- http://phpunit.de/manual/current/en/appendixes.configuration.html -->
++<phpunit
++    backupGlobals               = "false"
++    backupStaticAttributes      = "false"
++    colors                      = "true"
++    convertErrorsToExceptions   = "true"
++    convertNoticesToExceptions  = "true"
++    convertWarningsToExceptions = "true"
++    processIsolation            = "false"
++    stopOnFailure               = "false"
++    syntaxCheck                 = "false"
++    bootstrap                   = "bootstrap.php.cache" >
++
++    <testsuites>
++        <testsuite name="Project Test Suite">
++            <directory>../app/Tests</directory>
++            <directory>../src/*Bundle/Tests</directory>
++            <directory>../src/*/*Bundle/Tests</directory>
++            <directory>../src/*/Bundle/*Bundle/Tests</directory>
++        </testsuite>
++    </testsuites>
++
++    <!--
++    <php>
++        <server name="KERNEL_DIR" value="/path/to/your/app/" />
++    </php>
++    -->
++
++    <filter>
++        <whitelist>
++            <directory>../src</directory>
++            <exclude>
++                <directory>../src/*Bundle/Resources</directory>
++                <directory>../src/*Bundle/Tests</directory>
++                <directory>../src/*/*Bundle/Resources</directory>
++                <directory>../src/*/*Bundle/Tests</directory>
++                <directory>../src/*/Bundle/*Bundle/Resources</directory>
++                <directory>../src/*/Bundle/*Bundle/Tests</directory>
++            </exclude>
++        </whitelist>
++    </filter>
++
++</phpunit>
 diff --git a/var/SymfonyRequirements.php b/var/SymfonyRequirements.php
 new file mode 100644
 index 0000000..dbaafa8
