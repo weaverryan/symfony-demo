@@ -171,7 +171,7 @@ class AddUserCommand extends ContainerAwareCommand
         $isAdmin = $input->getOption('is-admin');
 
         // first check if a user with the same username already exists
-        $existingUser = $this->em->getRepository('AppBundle:User')->findOneBy(array('username' => $username));
+        $existingUser = $this->em->getRepository('App:User')->findOneBy(array('username' => $username));
 
         if (null !== $existingUser) {
             throw new \RuntimeException(sprintf('There is already a user registered with the "%s" username.', $username));

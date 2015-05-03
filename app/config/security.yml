@@ -9,7 +9,7 @@ security:
         # To see the users at app/DataFixtures/ORM/LoadFixtures.php
         # To load users from somewhere else: http://symfony.com/doc/current/cookbook/security/custom_provider.html
         database_users:
-            entity: { class: AppBundle:User, property: username }
+            entity: { class: App:User, property: username }
 
     # http://symfony.com/doc/current/book/security.html#firewalls-authentication
     firewalls:

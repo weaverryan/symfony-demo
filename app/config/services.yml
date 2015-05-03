@@ -41,7 +41,7 @@ services:
     #
     # // traditional code inside a controller
     # $em = $this->getDoctrine()->getManager();
-    # $posts = $em->getRepository('AppBundle:Post')->findAll();
+    # $posts = $em->getRepository('App:Post')->findAll();
     #
     # // same code using repository services
     # $posts = $this->get('post_repository')->findAll();
