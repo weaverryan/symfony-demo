@@ -8,11 +8,11 @@
 set_time_limit(0);
 
 require_once __DIR__.'/../var/bootstrap.php.cache';
-require_once __DIR__.'/../app/AppKernel.php';
 
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Debug\Debug;
+use App\AppKernel;
 
 $input = new ArgvInput();
 $env = $input->getParameterOption(array('--env', '-e'), getenv('SYMFONY_ENV') ?: 'dev');
