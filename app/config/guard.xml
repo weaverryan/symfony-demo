@@ -5,6 +5,15 @@
     xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <service id="security.authentication.guard_handler"
+                 class="Symfony\Component\Security\Core\Authentication\GuardAuthenticatorHandler"
+            >
+            <tag name="monolog.logger" channel="security" />
+            <argument type="service" id="security.token_storage" />
+            <argument type="service" id="event_dispatcher" on-invalid="null" />
+            <argument type="service" id="logger" on-invalid="null" />
+        </service>
+
         <!-- See GuardAuthenticationFactory -->
         <service id="security.authentication.provider.guard"
                  class="Symfony\Component\Security\Core\Authentication\Provider\GuardAuthenticationProvider"
@@ -23,7 +32,7 @@
                  abstract="true"
             >
             <tag name="monolog.logger" channel="security" />
-            <argument type="service" id="security.context" />
+            <argument type="service" id="security.authentication.guard_handler" />
             <argument type="service" id="security.authentication.manager" />
             <argument /> <!-- Provider-shared Key -->
             <argument /> <!-- Authenticator -->

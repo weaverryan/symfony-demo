@@ -53,15 +53,12 @@ class SecurityController extends Controller
 
         $firewallKey = 'secured_area';
         $authenticator = $this->container->get('app.form_login_authenticator');
-        $tokenStorage = $this->container->get('security.token_storage');
+        $guardHandler = $this->container->get('security.authentication.guard_handler');
 
-        $token = $authenticator->createAuthenticatedToken($user, $firewallKey);
-        $tokenStorage->setToken($token);
-        // todo - trigger the event, remember me functionality
-
-        $successResponse = $authenticator->onAuthenticationSuccess(
+        $successResponse = $guardHandler->authenticateUserAndHandleSuccess(
+            $user,
+            $authenticator,
             $request,
-            $token,
             $firewallKey
         );
 
