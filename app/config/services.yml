@@ -48,3 +48,7 @@ services:
     #
     # // same code using repository services
     # $posts = $this->get('post_repository')->findAll();
+
+    app.form_login_authenticator:
+        class: AppBundle\Security\FormLoginAuthenticator
+        arguments: ['@security.password_encoder', '@router']
