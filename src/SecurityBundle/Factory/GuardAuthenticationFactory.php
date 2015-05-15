@@ -20,7 +20,7 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
 
     public function getKey()
     {
-        return 'simple-preauth';
+        return 'guard';
     }
 
     public function addConfiguration(NodeDefinition $node)
