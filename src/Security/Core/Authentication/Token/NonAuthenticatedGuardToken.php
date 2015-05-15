@@ -14,7 +14,7 @@ class NonAuthenticatedGuardToken extends AbstractToken
     private $credentials;
     private $providerKey;
 
-    public function __construct(array $credentials, $providerKey)
+    public function __construct($credentials, $providerKey)
     {
         $this->credentials = $credentials;
         $this->providerKey = $providerKey;
@@ -23,10 +23,10 @@ class NonAuthenticatedGuardToken extends AbstractToken
     }
 
     /**
-     * Returns the user credentials, which are an array of anything you
-     * wanted to put in there (e.g. username, password, favoriteColor)
+     * Returns the user credentials, which might be an array of anything you
+     * wanted to put in there (e.g. username, password, favoriteColor).
      *
-     * @return array The user credentials
+     * @return mixed The user credentials
      */
     public function getCredentials()
     {

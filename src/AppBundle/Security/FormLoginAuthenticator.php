@@ -50,7 +50,7 @@ class FormLoginAuthenticator implements GuardAuthenticatorInterface
         ];
     }
 
-    public function authenticate(array $credentials, UserProviderInterface $userProvider)
+    public function authenticate($credentials, UserProviderInterface $userProvider)
     {
         $username = $credentials['username'];
         $password = $credentials['password'];

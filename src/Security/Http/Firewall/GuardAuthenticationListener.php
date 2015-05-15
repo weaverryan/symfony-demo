@@ -64,12 +64,13 @@ class GuardAuthenticationListener implements ListenerInterface
 
         try {
             $credentials = $this->guardAuthenticator->getCredentialsFromRequest($request);
-            $token = new NonAuthenticatedGuardToken($credentials, $this->providerKey);
 
             // allow null to be returned to skip authentication
-            if (null === $token) {
+            if (null === $credentials) {
                 return;
             }
+
+            $token = new NonAuthenticatedGuardToken($credentials, $this->providerKey);
 
             $token = $this->authenticationManager->authenticate($token);
             $this->tokenStorage->setToken($token);

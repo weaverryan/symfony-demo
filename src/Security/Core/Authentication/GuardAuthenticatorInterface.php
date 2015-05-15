@@ -14,7 +14,10 @@ interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
 {
     /**
      * Get the authentication credentials from the request and return them
-     * as an array. If you return null, authentication will be skipped.
+     * as any type (e.g. an associate array). If you return null, authentication
+     * will be skipped.
+     *
+     * Whatever value you return here will be passed to authenticate()
      *
      * For example, for a form login, you might:
      *
@@ -28,20 +31,22 @@ interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
      *      return array('api_key' => $request->headers->get('X-API-TOKEN'));
      *
      * @param Request $request
-     * @return array|null
+     * @return mixed|null
      */
     public function getCredentialsFromRequest(Request $request);
 
     /**
-     * Given an array of credentials, return a UserInterface or throw an
-     * AuthenticationException on a failure
+     * Given "credentials" (which are usually an array, but could be anything),
+     * return a UserInterface or throw an AuthenticationException on a failure
      *
-     * @param array $credentials
+     * The *credentials* are are the return value from getCredentialsFromRequest()
+     *
+     * @param mixed $credentials
      * @param UserProviderInterface $userProvider
      * @throws AuthenticationException
      * @return UserInterface
      */
-    public function authenticate(array $credentials, UserProviderInterface $userProvider);
+    public function authenticate($credentials, UserProviderInterface $userProvider);
 
     /**
      * @param UserInterface $user
