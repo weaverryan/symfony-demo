@@ -26,21 +26,31 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
     public function addConfiguration(NodeDefinition $node)
     {
         $node
+            ->fixXmlConfig('authenticator')
             ->children()
                 ->scalarNode('provider')->end()
-                ->scalarNode('authenticator')->cannotBeEmpty()->end()
-                ->booleanNode('remember_me')->defaultFalse()->end()
+                ->scalarNode('entry_point')->defaultValue(null)->end()
+                ->arrayNode('authenticators')
+                    ->cannotBeEmpty()
+                    ->prototype('scalar')->end()
+                ->end()
             ->end()
         ;
     }
 
     public function create(ContainerBuilder $container, $id, $config, $userProvider, $defaultEntryPoint)
     {
+        $authenticatorIds = $config['authenticators'];
+        $authenticatorReferences = array();
+        foreach ($authenticatorIds as $authenticatorId) {
+            $authenticatorReferences[] = new Reference($authenticatorId);
+        }
+
         // configure the GuardAuthenticationFactory to have the dynamic constructor arguments
         $providerId = 'security.authentication.provider.guard.'.$id;
         $container
             ->setDefinition($providerId, new DefinitionDecorator('security.authentication.provider.guard'))
-            ->replaceArgument(0, new Reference($config['authenticator']))
+            ->replaceArgument(0, $authenticatorReferences)
             ->replaceArgument(1, new Reference($userProvider))
             ->replaceArgument(2, $id)
         ;
@@ -49,9 +59,10 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
         $listenerId = 'security.authentication.listener.guard.'.$id;
         $listener = $container->setDefinition($listenerId, new DefinitionDecorator('security.authentication.listener.guard'));
         $listener->replaceArgument(2, $id);
-        $listener->replaceArgument(3, new Reference($config['authenticator']));
+        $listener->replaceArgument(3, $authenticatorReferences);
 
-        $entryPointId = $this->createEntryPoint($container, $id, $config, $defaultEntryPoint);
+        // determine the entryPointId to use
+        $entryPointId = $this->determineEntryPoint($defaultEntryPoint, $config);
 
         if ($config['remember_me']) {
             $container
@@ -62,20 +73,35 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
         return array($providerId, $listenerId, $entryPointId);
     }
 
-    private function createEntryPoint($container, $id, $config, $defaultEntryPointId)
+    private function determineEntryPoint($defaultEntryPointId, array $config)
     {
-        // is there already an entry point defined by the firewall or another factory?
-        // Let's respect that
         if ($defaultEntryPointId) {
+            // explode if they've configured the entry_point, but there is already one
+            if ($config['entry_point']) {
+                throw new \LogicException(sprintf(
+                    'The guard authentication provider cannot use the "%s" entry_point because another entry point is already configured by another provider! Either remove the other provider or move the entry_point configuration as a root key under your firewall',
+                    $config['entry_point']
+                ));
+            }
+
             return $defaultEntryPointId;
         }
 
-        // setup the entry point to be the authenticator itself
-        $entryPointId = 'security.authentication.guard_entry_point.'.$id;
-        $container
-            ->setDefinition($entryPointId, new DefinitionDecorator($config['authenticator']))
-        ;
+        if ($config['entry_point']) {
+            // if it's configured explicitly, use it!
+            return $config['entry_point'];
+        }
 
-        return $entryPointId;
+        $authenticatorIds = $config['authenticators'];
+        if (count($authenticatorIds) == 1) {
+            // if there is only one authenticator, use that as the entry point
+            return array_shift($authenticatorIds);
+        }
+
+        // we have multiple entry points - we must ask them to configure one
+        throw new \LogicException(sprintf(
+            'Because you have multiple guard configurators, you need to set the "guard.entry_point" key to one of you configurators (%s)',
+            implode(', ', $authenticatorIds)
+        ));
     }
 }

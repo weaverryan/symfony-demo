@@ -22,9 +22,14 @@ security:
             anonymous: true
 
             guard:
-                authenticator: app.form_login_authenticator
+                authenticators:
+                    - app.form_login_authenticator
+                    - app.token_authenticator
                 # authenticator: app.token_authenticator
-                remember_me: true
+                # remember_me: true
+                # provider: database_users
+                # entry_point: app.token_authenticator
+                entry_point: app.form_login_authenticator
             remember_me:
                 key: abcd123KEY
             # entry_point: app.form_login_authenticator

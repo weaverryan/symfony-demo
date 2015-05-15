@@ -12,14 +12,23 @@ namespace Symfony\Component\Security\Core\Authentication\Token;
 class NonAuthenticatedGuardToken extends AbstractToken
 {
     private $credentials;
-    private $providerKey;
+    private $guardProviderKey;
 
-    public function __construct($credentials, $providerKey)
+    /**
+     * @param mixed  $credentials
+     * @param string $guardProviderKey Unique key that bind this token to a specific GuardAuthenticator
+     */
+    public function __construct($credentials, $guardProviderKey)
     {
         $this->credentials = $credentials;
-        $this->providerKey = $providerKey;
+        $this->guardProviderKey = $guardProviderKey;
 
         parent::__construct(array());
+    }
+
+    public function getGuardProviderKey()
+    {
+        return $this->guardProviderKey;
     }
 
     /**
