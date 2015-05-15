@@ -11,6 +11,9 @@ security:
         database_users:
             entity: { class: AppBundle:User, property: username }
 
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_ALLOWED_TO_SWITCH]
+
     # http://symfony.com/doc/current/book/security.html#firewalls-authentication
     firewalls:
         secured_area:
@@ -33,6 +36,8 @@ security:
             remember_me:
                 key: abcd123KEY
             # entry_point: app.form_login_authenticator
+
+            switch_user: ~
 
             logout:
                 # The route name the user can go to in order to logout
