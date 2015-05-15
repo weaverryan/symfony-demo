@@ -98,9 +98,6 @@ class FormLoginAuthenticator implements GuardAuthenticatorInterface
         return new RedirectResponse($this->router->generate('security_login_form'));
     }
 
-    /**
-     * NOT PART OF GUARDAUTHENTICATOR YET - just an entry point
-     */
     public function start(Request $request, AuthenticationException $authException = null)
     {
         return new RedirectResponse($this->router->generate('security_login_form'));
