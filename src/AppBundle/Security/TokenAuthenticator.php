@@ -93,4 +93,9 @@ class TokenAuthenticator implements GuardAuthenticatorInterface
 
         return new Response(json_encode($data), 401);
     }
+
+    public function supportsRememberMe()
+    {
+        return false;
+    }
 }

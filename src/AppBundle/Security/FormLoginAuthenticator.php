@@ -95,4 +95,9 @@ class FormLoginAuthenticator implements GuardAuthenticatorInterface
     {
         return new RedirectResponse($this->router->generate('security_login_form'));
     }
+
+    public function supportsRememberMe()
+    {
+        return true;
+    }
 }

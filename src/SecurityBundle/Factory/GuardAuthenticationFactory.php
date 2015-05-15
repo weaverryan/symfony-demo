@@ -64,11 +64,10 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
         // determine the entryPointId to use
         $entryPointId = $this->determineEntryPoint($defaultEntryPoint, $config);
 
-        if ($config['remember_me']) {
-            $container
-                ->getDefinition($listenerId)
-                ->addTag('security.remember_me_aware', array('id' => $id, 'provider' => $userProvider));
-        }
+        // this is always injected - then the listener decides if it should be used
+        $container
+            ->getDefinition($listenerId)
+            ->addTag('security.remember_me_aware', array('id' => $id, 'provider' => $userProvider));
 
         return array($providerId, $listenerId, $entryPointId);
     }
