@@ -4,6 +4,7 @@ namespace Symfony\Component\Security\Core\Authentication\Provider;
 
 use Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken;
+use Symfony\Component\Security\Core\User\UserCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -16,12 +17,14 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
     private $guardAuthenticator;
     private $userProvider;
     private $providerKey;
+    private $userChecker;
 
-    public function __construct(GuardAuthenticatorInterface $guardAuthenticator, UserProviderInterface $userProvider, $providerKey)
+    public function __construct(GuardAuthenticatorInterface $guardAuthenticator, UserProviderInterface $userProvider, $providerKey, UserCheckerInterface $userChecker)
     {
         $this->guardAuthenticator = $guardAuthenticator;
         $this->userProvider = $userProvider;
         $this->providerKey = $providerKey;
+        $this->userChecker = $userChecker;
     }
 
     /**
@@ -40,6 +43,10 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
                 is_object($user) ? get_class($user) : gettype($user)
             ));
         }
+
+        // check the AdvancedUserInterface methods!
+        $this->userChecker->checkPreAuth($user);;
+        $this->userChecker->checkPostAuth($user);
 
         $token = $this->guardAuthenticator->createAuthenticatedToken($user, $this->providerKey);
         if (!$token instanceof TokenInterface) {
