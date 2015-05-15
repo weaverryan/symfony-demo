@@ -4,7 +4,11 @@
     "type": "project",
     "description": "Symfony Demo Application",
     "autoload": {
-        "psr-0": { "": "src/", "SymfonyStandard": "app/" }
+        "psr-0": { "": "src/", "SymfonyStandard": "app/" },
+        "psr-4": {
+            "Symfony\\Component\\Security\\": "src/Security",
+            "Symfony\\Bundle\\SecurityBundle\\": "src/SecurityBundle"
+        }
     },
     "require": {
         "php"                                  : ">=5.3.3",
