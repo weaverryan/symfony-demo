@@ -40,6 +40,35 @@ class SecurityController extends Controller
     }
 
     /**
+     * @Route("/login/auto/{username}")
+     */
+    public function autoLogin($username, Request $request)
+    {
+        $user = $this->getDoctrine()
+            ->getRepository('AppBundle:User')
+            ->findOneBy(['username' => $username]);
+        if (!$user) {
+            throw $this->createNotFoundException('No user!');
+        }
+
+        $firewallKey = 'secured_area';
+        $authenticator = $this->container->get('app.form_login_authenticator');
+        $tokenStorage = $this->container->get('security.token_storage');
+
+        $token = $authenticator->createAuthenticatedToken($user, $firewallKey);
+        $tokenStorage->setToken($token);
+        // todo - trigger the event, remember me functionality
+
+        $successResponse = $authenticator->onAuthenticationSuccess(
+            $request,
+            $token,
+            $firewallKey
+        );
+
+        return $successResponse;
+    }
+
+    /**
      * This is the route the login form submits to.
      *
      * But, this will never be executed. Symfony will intercept this first
