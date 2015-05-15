@@ -1,8 +1,6 @@
 <?php
 
-namespace Symfony\Component\Security\Core\Authentication;
-
-use Symfony\Component\Security\Core\Authentication\Token\AbstractToken;
+namespace Symfony\Component\Security\Core\Authentication\Token;
 
 /**
  * The token used by the guard auth system before authentication

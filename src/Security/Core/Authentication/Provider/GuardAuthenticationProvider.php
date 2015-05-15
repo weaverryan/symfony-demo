@@ -3,11 +3,10 @@
 namespace Symfony\Component\Security\Core\Authentication\Provider;
 
 use Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface;
-use Symfony\Component\Security\Core\Authentication\NonAuthenticatedGuardToken;
+use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 /**
  * @author Ryan Weaver <weaverryan@gmail.com>
