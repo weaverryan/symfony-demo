@@ -56,3 +56,8 @@ services:
     app.token_authenticator:
         class: AppBundle\Security\TokenAuthenticator
         arguments: ['@doctrine.orm.entity_manager']
+
+    app.login_flash_subscriber:
+        class: AppBundle\EventListener\LoginFlashSubscriber
+        tags:
+            - { name: kernel.event_subscriber }
