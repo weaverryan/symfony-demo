@@ -21,17 +21,10 @@ security:
             # denying access is done in access_control or in your controllers
             anonymous: true
 
-            # This allows the user to login by submitting a username and password
-            # Reference: http://symfony.com/doc/current/cookbook/security/form_login_setup.html
-            form_login:
-                # The route name that the login form submits to
-                check_path: security_login_check
-                # The name of the route where the login form lives
-                # When the user tries to access a protected page, they are redirected here
-                login_path: security_login_form
-                # Secure the login form against CSRF
-                # Reference: http://symfony.com/doc/current/cookbook/security/csrf_in_login_form.html
-                csrf_provider: security.csrf.token_manager
+            guard:
+                authenticator: app.form_login_authenticator
+                # remember_me: true
+            entry_point: app.form_login_authenticator
 
             logout:
                 # The route name the user can go to in order to logout
