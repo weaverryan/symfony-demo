@@ -24,7 +24,7 @@ security:
             guard:
                 authenticator: app.form_login_authenticator
                 # remember_me: true
-            entry_point: app.form_login_authenticator
+            # entry_point: app.form_login_authenticator
 
             logout:
                 # The route name the user can go to in order to logout

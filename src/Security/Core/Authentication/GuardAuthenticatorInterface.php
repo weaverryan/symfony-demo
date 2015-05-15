@@ -8,8 +8,9 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
-interface GuardAuthenticatorInterface
+interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
 {
     /**
      * Get the authentication credentials from the request and return them

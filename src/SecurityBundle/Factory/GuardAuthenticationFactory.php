@@ -51,13 +51,31 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
         $listener->replaceArgument(2, $id);
         $listener->replaceArgument(3, new Reference($config['authenticator']));
 
+        $entryPointId = $this->createEntryPoint($container, $id, $config, $defaultEntryPoint);
+
         if ($config['remember_me']) {
             $container
                 ->getDefinition($listenerId)
                 ->addTag('security.remember_me_aware', array('id' => $id, 'provider' => $userProvider));
         }
 
-        // providerId, listenerId and entryPointId
-        return array($providerId, $listenerId, null);
+        return array($providerId, $listenerId, $entryPointId);
+    }
+
+    private function createEntryPoint($container, $id, $config, $defaultEntryPointId)
+    {
+        // is there already an entry point defined by the firewall or another factory?
+        // Let's respect that
+        if ($defaultEntryPointId) {
+            return $defaultEntryPointId;
+        }
+
+        // setup the entry point to be the authenticator itself
+        $entryPointId = 'security.authentication.guard_entry_point.'.$id;
+        $container
+            ->setDefinition($entryPointId, new DefinitionDecorator($config['authenticator']))
+        ;
+
+        return $entryPointId;
     }
 }
