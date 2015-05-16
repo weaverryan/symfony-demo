@@ -1,6 +1,6 @@
 <?php
 
-namespace Symfony\Bundle\SecurityBundle\Factory;
+namespace Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory;
 
 use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\SecurityFactoryInterface;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;

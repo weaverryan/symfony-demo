@@ -11,7 +11,7 @@
 
 namespace AppBundle;
 
-use Symfony\Bundle\SecurityBundle\Factory\GuardAuthenticationFactory;
+use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\GuardAuthenticationFactory;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
