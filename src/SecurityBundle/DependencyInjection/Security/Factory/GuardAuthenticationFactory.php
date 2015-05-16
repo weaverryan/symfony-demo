@@ -31,7 +31,7 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
                 ->scalarNode('provider')->end()
                 ->scalarNode('entry_point')->defaultValue(null)->end()
                 ->arrayNode('authenticators')
-                    ->cannotBeEmpty()
+                    ->requiresAtLeastOneElement()
                     ->prototype('scalar')->end()
                 ->end()
             ->end()
