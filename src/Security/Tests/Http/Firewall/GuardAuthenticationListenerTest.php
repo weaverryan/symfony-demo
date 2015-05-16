@@ -1,0 +1,168 @@
+<?php
+
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Symfony\Component\Security\Http\Tests\Firewall;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Http\Firewall\GuardAuthenticationListener;
+use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+
+class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
+{
+    private $authenticationManager;
+    private $guardAuthenticatorHandler;
+    private $event;
+    private $logger;
+    private $request;
+
+    public function testHandleSuccess()
+    {
+        $authenticator = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+        $authenticateToken = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');
+        $providerKey = 'my_firewall';
+
+        $credentials = array('username' => 'weaverryan', 'password' => 'all_your_base');
+        $authenticator
+            ->expects($this->once())
+            ->method('getCredentialsFromRequest')
+            ->with($this->equalTo($this->request))
+            ->will($this->returnValue($credentials));
+
+        // a clone of the token that should be created internally
+        $uniqueGuardKey = 'my_firewall_0';
+        $nonAuthedToken = new NonAuthenticatedGuardToken($credentials, $uniqueGuardKey);
+
+        $this->authenticationManager
+            ->expects($this->once())
+            ->method('authenticate')
+            ->with($this->equalTo($nonAuthedToken))
+            ->will($this->returnValue($authenticateToken));
+
+        $this->guardAuthenticatorHandler
+            ->expects($this->once())
+            ->method('authenticateWithToken')
+            ->with($authenticateToken, $this->request);
+
+        $this->guardAuthenticatorHandler
+            ->expects($this->once())
+            ->method('handleAuthenticationSuccess')
+            ->with($authenticator, $this->request, $authenticateToken, $providerKey);
+
+        $listener = new GuardAuthenticationListener(
+            $this->guardAuthenticatorHandler,
+            $this->authenticationManager,
+            $providerKey,
+            array($authenticator),
+            $this->logger
+        );
+
+        $listener->handle($this->event);
+    }
+
+    public function testHandleCatchesAuthenticationException()
+    {
+        $authenticator = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+        $authenticateToken = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');
+        $providerKey = 'my_firewall';
+
+        $authException = new AuthenticationException('Get outta here crazy user with a bad password!');
+        $authenticator
+            ->expects($this->once())
+            ->method('getCredentialsFromRequest')
+            ->will($this->throwException($authException));
+
+        // this is not called
+        $this->authenticationManager
+            ->expects($this->never())
+            ->method('authenticate');
+
+        $this->guardAuthenticatorHandler
+            ->expects($this->once())
+            ->method('handleAuthenticationFailure')
+            ->with($authenticator, $authException, $this->request);
+
+        $listener = new GuardAuthenticationListener(
+            $this->guardAuthenticatorHandler,
+            $this->authenticationManager,
+            $providerKey,
+            array($authenticator),
+            $this->logger
+        );
+
+        $listener->handle($this->event);
+    }
+
+    public function testReturnNullToSkipAuth()
+   {
+       $authenticatorA = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+       $authenticatorB = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+       $providerKey = 'my_firewall';
+
+       $authenticatorA
+           ->expects($this->once())
+           ->method('getCredentialsFromRequest')
+           ->will($this->returnValue(null));
+       $authenticatorB
+           ->expects($this->once())
+           ->method('getCredentialsFromRequest')
+           ->will($this->returnValue(null));
+
+       // this is not called
+       $this->authenticationManager
+           ->expects($this->never())
+           ->method('authenticate');
+
+       $this->guardAuthenticatorHandler
+           ->expects($this->never())
+           ->method('handleAuthenticationSuccess');
+
+       $listener = new GuardAuthenticationListener(
+           $this->guardAuthenticatorHandler,
+           $this->authenticationManager,
+           $providerKey,
+           array($authenticatorA, $authenticatorB),
+           $this->logger
+       );
+
+       $listener->handle($this->event);
+   }
+
+    protected function setUp()
+    {
+        $this->authenticationManager = $this->getMockBuilder('Symfony\Component\Security\Core\Authentication\AuthenticationProviderManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->guardAuthenticatorHandler = $this->getMockBuilder('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorHandler')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->request = new Request(array(), array(), array(), array(), array(), array());
+
+        $this->event = $this->getMock('Symfony\Component\HttpKernel\Event\GetResponseEvent', array(), array(), '', false);
+        $this->event
+            ->expects($this->any())
+            ->method('getRequest')
+            ->will($this->returnValue($this->request));
+
+        $this->logger = $this->getMock('Psr\Log\LoggerInterface');
+    }
+
+    protected function tearDown()
+    {
+        $this->authenticationManager = null;
+        $this->guardAuthenticatorHandler = null;
+        $this->event = null;
+        $this->logger = null;
+        $this->request = null;
+    }
+}
