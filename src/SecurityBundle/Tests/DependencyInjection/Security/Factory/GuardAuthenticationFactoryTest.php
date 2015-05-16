@@ -13,6 +13,8 @@ namespace Symfony\Bundle\SecurityBundle\Tests\DependencyInjection\Security\Facto
 
 use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\GuardAuthenticationFactory;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 
 class GuardAuthenticationFactoryTest extends \PHPUnit_Framework_TestCase
 {
@@ -89,5 +91,90 @@ class GuardAuthenticationFactoryTest extends \PHPUnit_Framework_TestCase
         );
 
         return $tests;
+    }
+
+    public function testBasicCreate()
+    {
+        // simple configuration
+        $config = array(
+            'authenticators' => array('authenticator123'),
+            'entry_point' => null,
+        );
+        list($container, $entryPointId) = $this->executeCreate($config, null);
+        $this->assertEquals('authenticator123', $entryPointId);
+
+        $providerDefinition = $container->getDefinition('security.authentication.provider.guard.my_firewall');
+        $this->assertEquals(array(
+            'index_0' => array(new Reference('authenticator123')),
+            'index_1' => new Reference('my_user_provider'),
+            'index_2' => 'my_firewall'
+        ), $providerDefinition->getArguments());
+
+        $listenerDefinition = $container->getDefinition('security.authentication.listener.guard.my_firewall');
+        $this->assertEquals('my_firewall', $listenerDefinition->getArgument(2));
+        $this->assertEquals(array(new Reference('authenticator123')), $listenerDefinition->getArgument(3));
+    }
+
+    public function testExistingDefaultEntryPointUsed()
+    {
+        // any existing default entry point is used
+        $config = array(
+            'authenticators' => array('authenticator123'),
+            'entry_point' => null,
+        );
+        list($container, $entryPointId) = $this->executeCreate($config, 'some_default_entry_point');
+        $this->assertEquals('some_default_entry_point', $entryPointId);
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testCannotOverrideDefaultEntryPoint()
+    {
+        // any existing default entry point is used
+        $config = array(
+            'authenticators' => array('authenticator123'),
+            'entry_point' => 'authenticator123',
+        );
+        $this->executeCreate($config, 'some_default_entry_point');
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testMultipleAuthenticatorsRequiresEntryPoint()
+    {
+        // any existing default entry point is used
+        $config = array(
+            'authenticators' => array('authenticator123', 'authenticatorABC'),
+            'entry_point' => null,
+        );
+        $this->executeCreate($config, null);
+    }
+
+
+    public function testCreateWithEntryPoint()
+    {
+        // any existing default entry point is used
+        $config = array(
+            'authenticators' => array('authenticator123', 'authenticatorABC'),
+            'entry_point' => 'authenticatorABC',
+        );
+        list($container, $entryPointId) = $this->executeCreate($config, null);
+        $this->assertEquals('authenticatorABC', $entryPointId);
+    }
+
+    private function executeCreate(array $config, $defaultEntryPointId)
+    {
+        $container = new ContainerBuilder();
+        $container->register('security.authentication.provider.guard');
+        $container->register('security.authentication.listener.guard');
+        $id = 'my_firewall';
+        $userProviderId = 'my_user_provider';
+
+        $factory = new GuardAuthenticationFactory();
+        list($providerId, $listenerId, $entryPointId) = $factory->create($container, $id, $config, $userProviderId, $defaultEntryPointId);
+
+        return array($container, $entryPointId);
     }
 }
