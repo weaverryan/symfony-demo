@@ -43,6 +43,13 @@ class User implements UserInterface, AdvancedUserInterface
     private $password;
 
     /**
+     * An API token that can be used for this user
+     *
+     * @ORM\Column(type="string")
+     */
+    private $token;
+
+    /**
      * @ORM\Column(type="json_array")
      */
     private $roles = array();
@@ -180,5 +187,14 @@ class User implements UserInterface, AdvancedUserInterface
         return true;
     }
 
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
 
 }

@@ -15,7 +15,7 @@ $client = new Client([
 
 $response = $client->get('/admin/post/', [
     'headers' => [
-        'X-Auth-Token' => 'anna_admin'
+        'X-Auth-Token' => 'ANNA_ABC'
     ]
 ]);
 

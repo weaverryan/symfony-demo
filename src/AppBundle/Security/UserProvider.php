@@ -17,12 +17,7 @@ class UserProvider implements UserProviderInterface
         $this->em = $em;
     }
 
-    public function loadUserByToken($token)
-    {
-        // faking it!
-        return $this->getUserRepository()->findOneBy(array('username' => $token));
-    }
-
+    // UserProviderInterface
     public function loadUserByUsername($username)
     {
         $user = $this->getUserRepository()->findOneBy(array('username' => $username));
@@ -34,6 +29,7 @@ class UserProvider implements UserProviderInterface
         return $user;
     }
 
+    // UserProviderInterface
     public function refreshUser(UserInterface $user)
     {
         $user = $this->getUserRepository()->find($user->getId());
@@ -44,9 +40,18 @@ class UserProvider implements UserProviderInterface
         return $user;
     }
 
+    // UserProviderInterface
     public function supportsClass($class)
     {
         return $class === get_class($this) || is_subclass_of($class, get_class($this));
+    }
+
+    // our own custom method
+    public function loadUserByToken($token)
+    {
+        return $this->getUserRepository()->findOneBy(array(
+            'token' => $token
+        ));
     }
 
     /**
