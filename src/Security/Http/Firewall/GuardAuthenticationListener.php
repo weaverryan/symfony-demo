@@ -2,6 +2,7 @@
 
 namespace Symfony\Component\Security\Http\Firewall;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\Security\Core\Authentication\GuardAuthenticatorHandler;
@@ -9,6 +10,7 @@ use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardTo
 use Symfony\Component\Security\Core\Authentication\AuthenticationManagerInterface;
 use Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\RememberMe\RememberMeServicesInterface;
 
@@ -86,9 +88,18 @@ class GuardAuthenticationListener implements ListenerInterface
             }
             $token = $this->authenticationManager->authenticate($token);
 
+            if (null !== $this->logger) {
+                $this->logger->info('Guard authentication successful!', array('token' => $token, 'authenticator' => get_class($guardAuthenticator)));
+            }
+
             $this->guardHandler->authenticateWithToken($token, $request);
         } catch (AuthenticationException $e) {
             // oh no! Authentication failed!
+
+            if (null !== $this->logger) {
+                $this->logger->info('Guard authentication failed.', array('exception' => $e, 'authenticator' => get_class($guardAuthenticator)));
+            }
+
             $response = $this->guardHandler->handleAuthenticationFailure($guardAuthenticator, $e, $request);
 
             if ($response instanceof Response) {
@@ -101,20 +112,19 @@ class GuardAuthenticationListener implements ListenerInterface
         // success!
         $response = $this->guardHandler->handleAuthenticationSuccess($guardAuthenticator, $request, $token, $this->providerKey);
         if ($response instanceof Response) {
-            $event->setResponse($response);
-        }
-
-        // if they have activated remember me, let's do it!
-        if (null !== $this->rememberMeServices && $guardAuthenticator->supportsRememberMe()) {
-            if (!$response instanceof Response) {
-                throw new \LogicException(sprintf(
-                    '%s::onAuthenticationSuccess *must* return a Response if you want to use the remember me functionality. Return a Response, or set remember_me to false under the guard configuration.',
-                    get_class($guardAuthenticator)
-                ));
+            if (null !== $this->logger) {
+                $this->logger->info('Guard authenticator set success response', array('response' => $response, 'authenticator' => get_class($guardAuthenticator)));
             }
 
-            $this->rememberMeServices->loginSuccess($request, $response, $token);
+            $event->setResponse($response);
+        } else {
+            if (null !== $this->logger) {
+                $this->logger->info('Guard authenticator set no success response: request continues', array('authenticator' => get_class($guardAuthenticator)));
+            }
         }
+
+        // attempt to trigger the remember me functionality
+        $this->triggerRememberMe($guardAuthenticator, $request, $response, $token);
     }
 
     /**
@@ -125,5 +135,38 @@ class GuardAuthenticationListener implements ListenerInterface
     public function setRememberMeServices(RememberMeServicesInterface $rememberMeServices)
     {
         $this->rememberMeServices = $rememberMeServices;
+    }
+
+    /**
+     * Checks to see if remember me is supported in the authenticator and
+     * on the firewall. If it is, the RememberMeServicesInterface is notified
+     *
+     * @param GuardAuthenticatorInterface $guardAuthenticator
+     * @param Request $request
+     * @param Response $response
+     * @param TokenInterface $token
+     */
+    private function triggerRememberMe(GuardAuthenticatorInterface $guardAuthenticator, Request $request, Response $response, TokenInterface $token)
+    {
+        if (!$guardAuthenticator->supportsRememberMe()) {
+            return;
+        }
+
+        if (null === $this->rememberMeServices) {
+            if (null !== $this->logger) {
+                $this->logger->info('Remember me skipped: it is not configured for the firewall', array('authenticator' => get_class($guardAuthenticator)));
+            }
+
+            return;
+        }
+
+        if (!$response instanceof Response) {
+            throw new \LogicException(sprintf(
+                '%s::onAuthenticationSuccess *must* return a Response if you want to use the remember me functionality. Return a Response, or set remember_me to false under the guard configuration.',
+                get_class($guardAuthenticator)
+            ));
+        }
+
+        $this->rememberMeServices->loginSuccess($request, $response, $token);
     }
 }

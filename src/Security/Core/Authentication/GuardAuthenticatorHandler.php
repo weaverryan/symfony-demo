@@ -2,7 +2,6 @@
 
 namespace Symfony\Component\Security\Core\Authentication;
 
-use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,13 +18,10 @@ class GuardAuthenticatorHandler
 
     private $dispatcher;
 
-    private $logger;
-
-    public function __construct(TokenStorageInterface $tokenStorage, EventDispatcherInterface $eventDispatcher = null, LoggerInterface $logger)
+    public function __construct(TokenStorageInterface $tokenStorage, EventDispatcherInterface $eventDispatcher = null)
     {
         $this->tokenStorage = $tokenStorage;
         $this->dispatcher = $eventDispatcher;
-        $this->logger = $logger;
     }
 
     /**
@@ -102,10 +98,6 @@ class GuardAuthenticatorHandler
     public function handleAuthenticationFailure(GuardAuthenticatorInterface $guardAuthenticator, AuthenticationException $authenticationException, Request $request)
     {
         $this->tokenStorage->setToken(null);
-
-        if (null !== $this->logger) {
-            $this->logger->info('Guard authentication failed.', array('exception' => $authenticationException, 'authenticator' => get_class($guardAuthenticator)));
-        }
 
         $response = $guardAuthenticator->onAuthenticationFailure($request, $authenticationException);
         if ($response instanceof Response || null === $response) {
