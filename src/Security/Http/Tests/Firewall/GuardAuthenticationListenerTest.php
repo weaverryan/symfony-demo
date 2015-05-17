@@ -71,8 +71,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
     public function testHandleCatchesAuthenticationException()
     {
         $authenticator = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
-        $authenticateToken = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');
-        $providerKey = 'my_firewall';
+        $providerKey = 'my_firewall2';
 
         $authException = new AuthenticationException('Get outta here crazy user with a bad password!');
         $authenticator
@@ -105,7 +104,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
    {
        $authenticatorA = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
        $authenticatorB = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
-       $providerKey = 'my_firewall';
+       $providerKey = 'my_firewall3';
 
        $authenticatorA
            ->expects($this->once())
