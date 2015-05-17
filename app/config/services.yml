@@ -1,6 +1,3 @@
-imports:
-    - { resource: 'guard.xml' }
-
 parameters:
     app.notifications.email_sender: anonymous@example.com
 
