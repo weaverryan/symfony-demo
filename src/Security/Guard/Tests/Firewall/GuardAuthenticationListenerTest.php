@@ -12,6 +12,7 @@
 namespace Symfony\Component\Security\Guard\Tests\Firewall;
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Guard\Firewall\GuardAuthenticationListener;
 use Symfony\Component\Security\Guard\Token\NonAuthenticatedGuardToken;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
@@ -23,6 +24,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
     private $event;
     private $logger;
     private $request;
+    private $rememberMeServices;
 
     public function testHandleSuccess()
     {
@@ -64,6 +66,55 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
             array($authenticator),
             $this->logger
         );
+
+        $listener->setRememberMeServices($this->rememberMeServices);
+        // should never be called - our handleAuthenticationSuccess() does not return a Response
+        $this->rememberMeServices
+            ->expects($this->never())
+            ->method('loginSuccess');
+
+        $listener->handle($this->event);
+    }
+
+    public function testHandleSuccessWithRememberMe()
+    {
+        $authenticator = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
+        $authenticateToken = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');
+        $providerKey = 'my_firewall_with_rememberme';
+
+        $authenticator
+            ->expects($this->once())
+            ->method('getCredentialsFromRequest')
+            ->with($this->equalTo($this->request))
+            ->will($this->returnValue(array('username' => 'anything_not_empty')));
+
+        $this->authenticationManager
+            ->expects($this->once())
+            ->method('authenticate')
+            ->will($this->returnValue($authenticateToken));
+
+        $successResponse = new Response('Success!');
+        $this->guardAuthenticatorHandler
+            ->expects($this->once())
+            ->method('handleAuthenticationSuccess')
+            ->will($this->returnValue($successResponse));
+
+        $listener = new GuardAuthenticationListener(
+            $this->guardAuthenticatorHandler,
+            $this->authenticationManager,
+            $providerKey,
+            array($authenticator),
+            $this->logger
+        );
+
+        $listener->setRememberMeServices($this->rememberMeServices);
+        $authenticator->expects($this->once())
+            ->method('supportsRememberMe')
+            ->will($this->returnValue(true));
+        // should be called - we do have a success Response
+        $this->rememberMeServices
+            ->expects($this->once())
+            ->method('loginSuccess');
 
         $listener->handle($this->event);
     }
@@ -154,6 +205,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($this->request));
 
         $this->logger = $this->getMock('Psr\Log\LoggerInterface');
+        $this->rememberMeServices = $this->getMock('Symfony\Component\Security\Http\RememberMe\RememberMeServicesInterface');
     }
 
     protected function tearDown()
