@@ -54,7 +54,7 @@ class GuardAuthenticatorHandlerTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($response));
 
         $handler = new GuardAuthenticatorHandler($this->tokenStorage, $this->dispatcher);
-        $actualResponse = $handler->handleAuthenticationSuccess($this->guardAuthenticator, $this->request, $this->token, $providerKey);
+        $actualResponse = $handler->handleAuthenticationSuccess($this->token, $this->request, $this->guardAuthenticator, $providerKey);
         $this->assertSame($response, $actualResponse);
     }
 
