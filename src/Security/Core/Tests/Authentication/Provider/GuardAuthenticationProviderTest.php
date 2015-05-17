@@ -83,10 +83,8 @@ class GuardAuthenticationProviderTest extends \PHPUnit_Framework_TestCase
 
     protected function tearDown()
     {
-        $this->authenticationManager = null;
-        $this->guardAuthenticatorHandler = null;
-        $this->event = null;
-        $this->logger = null;
-        $this->request = null;
+        $this->userProvider = null;
+        $this->userChecker = null;
+        $this->nonAuthedToken = null;
     }
 }
