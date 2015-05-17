@@ -19,7 +19,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     {
         $token = $request->headers->get('X-AUTH-TOKEN');
 
-        // no username? Don't do anything :D
+        // no token? Don't do anything :D
         if (!$token) {
             return;
         }
@@ -33,7 +33,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     {
         $token = $credentials['token'];
 
-        // use pretending like the token is a real token
+        // call a method on your UserProvider - see below for details
         $user = $userProvider->loadUserByToken($token);
 
         if (!$user) {
@@ -52,7 +52,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
     {
         $data = array(
-            // todo - I might translate this
+            // you might translate this message
             'message' => $exception->getMessageKey()
         );
 
@@ -65,7 +65,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     public function start(Request $request, AuthenticationException $authException = null)
     {
         $data = array(
-            // todo - I might translate this
+            // you might translate this message
             'message' => 'Authentication Required'
         );
 
