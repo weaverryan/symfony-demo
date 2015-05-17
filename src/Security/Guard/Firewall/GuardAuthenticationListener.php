@@ -15,6 +15,11 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Firewall\ListenerInterface;
 use Symfony\Component\Security\Http\RememberMe\RememberMeServicesInterface;
 
+/**
+ * Authentication listener for the "guard" system
+ *
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 class GuardAuthenticationListener implements ListenerInterface
 {
     private $guardHandler;
@@ -25,11 +30,9 @@ class GuardAuthenticationListener implements ListenerInterface
     private $rememberMeServices;
 
     /**
-     * Constructor.
-     *
      * @param GuardAuthenticatorHandler       $guardHandler          The Guard handler
      * @param AuthenticationManagerInterface  $authenticationManager An AuthenticationManagerInterface instance
-     * @param string                          $providerKey
+     * @param string                          $providerKey           The provider (i.e. firewall) key
      * @param GuardAuthenticatorInterface[]   $guardAuthenticators   The GuardAuthenticatorInterface instances
      * @param LoggerInterface                 $logger                A LoggerInterface instance
      */
@@ -47,14 +50,14 @@ class GuardAuthenticationListener implements ListenerInterface
     }
 
     /**
-     * This interface must be implemented by firewall listeners.
+     * Iterates over each authenticator to see if each wants to authenticate the request
      *
      * @param GetResponseEvent $event
      */
     public function handle(GetResponseEvent $event)
     {
         if (null !== $this->logger) {
-            $this->logger->info('Checking for guard authentication credentials', array('key' => $this->providerKey, 'authenticators' => count($this->guardAuthenticators)));
+            $this->logger->info('Checking for guard authentication credentials', array('firewall_key' => $this->providerKey, 'authenticators' => count($this->guardAuthenticators)));
         }
 
         foreach ($this->guardAuthenticators as $key => $guardAuthenticator) {
@@ -71,9 +74,10 @@ class GuardAuthenticationListener implements ListenerInterface
         $request = $event->getRequest();
         try {
             if (null !== $this->logger) {
-                $this->logger->info('Calling getCredentialsFromRequest on guard configurator', array('key' => $this->providerKey, 'authenticator' => get_class($guardAuthenticator)));
+                $this->logger->info('Calling getCredentialsFromRequest on guard configurator', array('firewall_key' => $this->providerKey, 'authenticator' => get_class($guardAuthenticator)));
             }
 
+            // allow the authenticator to fetch authentication info from the request
             $credentials = $guardAuthenticator->getCredentialsFromRequest($request);
 
             // allow null to be returned to skip authentication
@@ -85,14 +89,17 @@ class GuardAuthenticationListener implements ListenerInterface
             $token = new NonAuthenticatedGuardToken($credentials, $uniqueGuardKey);
 
             if (null !== $this->logger) {
-                $this->logger->info('Passing guard token information to the GuardAuthenticationProvider', array('key' => $this->providerKey, 'authenticator' => get_class($guardAuthenticator)));
+                $this->logger->info('Passing guard token information to the GuardAuthenticationProvider', array('firewall_key' => $this->providerKey, 'authenticator' => get_class($guardAuthenticator)));
             }
+            // pass the token into the AuthenticationManager system
+            // this indirectly calls GuardAuthenticationProvider::authenticate()
             $token = $this->authenticationManager->authenticate($token);
 
             if (null !== $this->logger) {
                 $this->logger->info('Guard authentication successful!', array('token' => $token, 'authenticator' => get_class($guardAuthenticator)));
             }
 
+            // sets the token on the token storage, etc
             $this->guardHandler->authenticateWithToken($token, $request);
         } catch (AuthenticationException $e) {
             // oh no! Authentication failed!

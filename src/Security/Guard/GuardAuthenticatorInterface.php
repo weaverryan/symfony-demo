@@ -10,6 +10,15 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
+/**
+ * The interface for all "guard" authenticators
+ *
+ * The methods on this interface are called throughout the guard authentication
+ * process to give you the power to control most parts of the process from
+ * one location.
+ *
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
 {
     /**
@@ -36,10 +45,10 @@ interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
     public function getCredentialsFromRequest(Request $request);
 
     /**
-     * Given "credentials" (which are usually an array, but could be anything),
-     * return a UserInterface or throw an AuthenticationException on a failure
+     * Return a UserInterface object based on the credentials OR throw
+     * an AuthenticationException
      *
-     * The *credentials* are are the return value from getCredentialsFromRequest()
+     * The *credentials* are the return value from getCredentialsFromRequest()
      *
      * @param mixed $credentials
      * @param UserProviderInterface $userProvider
@@ -49,8 +58,15 @@ interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
     public function authenticate($credentials, UserProviderInterface $userProvider);
 
     /**
+     * Create an authenticated token for the given user
+     *
+     * If you don't care about which token class is used or don't really
+     * understand what a "token" is, you can skip this method by extending
+     * the AbstractGuardAuthenticator class from your authenticator.
+     *
+     * @see AbstractGuardAuthenticator
      * @param UserInterface $user
-     * @param string $providerKey The firewall provider key
+     * @param string $providerKey The provider (i.e. firewall) key
      * @return TokenInterface
      */
     public function createAuthenticatedToken(UserInterface $user, $providerKey);
@@ -81,7 +97,7 @@ interface GuardAuthenticatorInterface extends AuthenticationEntryPointInterface
      *
      * @param Request $request
      * @param TokenInterface $token
-     * @param $providerKey
+     * @param string $providerKey The provider (i.e. firewall) key
      * @return Response|null
      */
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey);

@@ -5,6 +5,11 @@ namespace Symfony\Component\Security\Guard;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Guard\Token\GenericGuardToken;
 
+/**
+ * An optional base class that creates a GenericGuardToken for you
+ *
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 abstract class AbstractGuardAuthenticator implements GuardAuthenticatorInterface
 {
     /**

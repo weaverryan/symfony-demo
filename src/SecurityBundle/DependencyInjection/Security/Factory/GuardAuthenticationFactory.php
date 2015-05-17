@@ -8,6 +8,8 @@ use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
+ * Configures the "guard" authentication provider key under a firewall
+ *
  * @author Ryan Weaver <weaverryan@gmail.com>
  */
 class GuardAuthenticationFactory implements SecurityFactoryInterface
@@ -27,9 +29,15 @@ class GuardAuthenticationFactory implements SecurityFactoryInterface
         $node
             ->fixXmlConfig('authenticator')
             ->children()
-                ->scalarNode('provider')->end()
-                ->scalarNode('entry_point')->defaultValue(null)->end()
+                ->scalarNode('provider')
+                    ->info('A key from the "providers" section of your security config, in case your user provider is different than the firewall')
+                ->end()
+                ->scalarNode('entry_point')
+                    ->info('A service id (of one of your authenticators) whose start() method should be called when an anonymous user hits a page that requires authentication')
+                    ->defaultValue(null)
+                ->end()
                 ->arrayNode('authenticators')
+                    ->info('An array of service ids for all of your "authenticators"')
                     ->requiresAtLeastOneElement()
                     ->prototype('scalar')->end()
                 ->end()

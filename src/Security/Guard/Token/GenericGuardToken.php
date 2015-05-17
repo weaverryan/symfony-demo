@@ -7,13 +7,15 @@ use Symfony\Component\Security\Core\Role\RoleInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * An generic token used by the AbstractGuardAuthenticator
+ * A generic token used by the AbstractGuardAuthenticator
  *
  * This is meant to be used as an "authenticated" token, though it
  * could be set to not-authenticated later.
  *
  * You're free to use this (it's simple) or use any other token for
  * your authenticated token
+ *
+ * @author Ryan Weaver <weaverryan@gmail.com>
  */
 class GenericGuardToken extends AbstractToken
 {
@@ -31,7 +33,7 @@ class GenericGuardToken extends AbstractToken
         parent::__construct($roles);
 
         if (empty($providerKey)) {
-            throw new \InvalidArgumentException('$providerKey must not be empty.');
+            throw new \InvalidArgumentException('$providerKey (i.e. firewall key) must not be empty.');
         }
 
         $this->setUser($user);

@@ -18,6 +18,9 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use Symfony\Component\Security\Http\SecurityEvents;
 
+/**
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 class GuardAuthenticatorHandlerTest extends \PHPUnit_Framework_TestCase
 {
     private $tokenStorage;

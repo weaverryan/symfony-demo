@@ -10,6 +10,8 @@ use Symfony\Component\Security\Core\Authentication\Token\AbstractToken;
  * The GuardAuthenticationListener creates this, which is then consumed
  * immediately by the GuardAuthenticationProvider. If authentication is
  * successful, a different authenticated token is returned
+ *
+ * @author Ryan Weaver <weaverryan@gmail.com>
  */
 class NonAuthenticatedGuardToken extends AbstractToken
 {
@@ -18,7 +20,7 @@ class NonAuthenticatedGuardToken extends AbstractToken
 
     /**
      * @param mixed  $credentials
-     * @param string $guardProviderKey Unique key that bind this token to a specific GuardAuthenticator
+     * @param string $guardProviderKey Unique key that bind this token to a specific GuardAuthenticatorInterface
      */
     public function __construct($credentials, $guardProviderKey)
     {
@@ -26,6 +28,9 @@ class NonAuthenticatedGuardToken extends AbstractToken
         $this->guardProviderKey = $guardProviderKey;
 
         parent::__construct(array());
+
+        // never authenticated
+        parent::setAuthenticated(false);
     }
 
     public function getGuardProviderKey()
@@ -42,11 +47,6 @@ class NonAuthenticatedGuardToken extends AbstractToken
     public function getCredentials()
     {
         return $this->credentials;
-    }
-
-    public function isAuthenticated()
-    {
-        return false;
     }
 
     public function setAuthenticated($authenticated)

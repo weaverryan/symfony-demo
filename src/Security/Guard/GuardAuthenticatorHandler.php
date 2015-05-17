@@ -12,6 +12,14 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use Symfony\Component\Security\Http\SecurityEvents;
 
+/**
+ * A utility class that does much of the *work* during the guard authentication process
+ *
+ * By having the logic here instead of the listener, more of the process
+ * can be called directly (e.g. for manual authentication) or overridden.
+ *
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 class GuardAuthenticatorHandler
 {
     private $tokenStorage;
@@ -46,7 +54,7 @@ class GuardAuthenticatorHandler
      * @param TokenInterface $token
      * @param Request $request
      * @param GuardAuthenticatorInterface $guardAuthenticator
-     * @param $providerKey
+     * @param string $providerKey The provider (i.e. firewall) key
      * @return null|Response
      */
     public function handleAuthenticationSuccess(TokenInterface $token, Request $request, GuardAuthenticatorInterface $guardAuthenticator, $providerKey)
@@ -72,7 +80,7 @@ class GuardAuthenticatorHandler
      * @param UserInterface $user
      * @param Request $request
      * @param GuardAuthenticatorInterface $authenticator
-     * @param $providerKey
+     * @param string $providerKey The provider (i.e. firewall) key
      * @return Response|null
      */
     public function authenticateUserAndHandleSuccess(UserInterface $user, Request $request, GuardAuthenticatorInterface $authenticator, $providerKey)

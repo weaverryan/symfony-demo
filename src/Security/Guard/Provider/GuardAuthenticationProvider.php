@@ -11,6 +11,9 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 /**
+ * Responsible for accepting the NonAuthenticatedGuardToken and calling
+ * the correct authenticator to retrieve the authenticated token
+ *
  * @author Ryan Weaver <weaverryan@gmail.com>
  */
 class GuardAuthenticationProvider implements AuthenticationProviderInterface
@@ -23,6 +26,12 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
     private $providerKey;
     private $userChecker;
 
+    /**
+     * @param GuardAuthenticatorInterface[] $guardAuthenticators    The GuardAuthenticatorInterface instances
+     * @param UserProviderInterface         $userProvider           The user provider
+     * @param string                        $providerKey            The provider (i.e. firewall) key
+     * @param UserCheckerInterface $userChecker
+     */
     public function __construct(array $guardAuthenticators, UserProviderInterface $userProvider, $providerKey, UserCheckerInterface $userChecker)
     {
         $this->guardAuthenticators = $guardAuthenticators;
@@ -32,6 +41,8 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
     }
 
     /**
+     * Finds the correct authenticator for the token and calls it
+     *
      * @param NonAuthenticatedGuardToken $token
      * @return TokenInterface
      */
@@ -60,6 +71,7 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
 
     private function authenticateViaGuard(GuardAuthenticatorInterface $guardAuthenticator, NonAuthenticatedGuardToken $token)
     {
+        // get the user from the GuardAuthenticator
         $user = $guardAuthenticator->authenticate($token->getCredentials(), $this->userProvider);
 
         if (!$user instanceof UserInterface) {
@@ -74,6 +86,7 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
         $this->userChecker->checkPreAuth($user);;
         $this->userChecker->checkPostAuth($user);
 
+        // turn the UserInterface into a TokenInterface
         $authenticatedToken = $guardAuthenticator->createAuthenticatedToken($user, $this->providerKey);
         if (!$authenticatedToken instanceof TokenInterface) {
             throw new \UnexpectedValueException(sprintf(

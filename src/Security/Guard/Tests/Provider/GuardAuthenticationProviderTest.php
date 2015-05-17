@@ -13,6 +13,9 @@ namespace Symfony\Component\Security\Guard\Tests\Provider;
 
 use Symfony\Component\Security\Guard\Provider\GuardAuthenticationProvider;
 
+/**
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 class GuardAuthenticationProviderTest extends \PHPUnit_Framework_TestCase
 {
     private $userProvider;

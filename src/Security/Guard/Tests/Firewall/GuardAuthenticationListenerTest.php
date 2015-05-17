@@ -17,6 +17,9 @@ use Symfony\Component\Security\Guard\Firewall\GuardAuthenticationListener;
 use Symfony\Component\Security\Guard\Token\NonAuthenticatedGuardToken;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
+/**
+ * @author Ryan Weaver <weaverryan@gmail.com>
+ */
 class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
 {
     private $authenticationManager;
