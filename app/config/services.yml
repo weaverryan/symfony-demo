@@ -58,3 +58,7 @@ services:
         class: AppBundle\EventListener\LoginFlashSubscriber
         tags:
             - { name: kernel.event_subscriber }
+
+    app.user_provider:
+        class: AppBundle\Security\UserProvider
+        arguments: ['@doctrine.orm.entity_manager']

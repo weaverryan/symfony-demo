@@ -9,7 +9,7 @@ security:
         # To see the users at src/AppBundle/DataFixtures/ORM/LoadFixtures.php
         # To load users from somewhere else: http://symfony.com/doc/current/cookbook/security/custom_provider.html
         database_users:
-            entity: { class: AppBundle:User, property: username }
+            id: app.user_provider
 
     role_hierarchy:
         ROLE_ADMIN: [ROLE_ALLOWED_TO_SWITCH]

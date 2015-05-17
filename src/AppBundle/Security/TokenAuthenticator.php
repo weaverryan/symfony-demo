@@ -37,13 +37,17 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
         ];
     }
 
+    /**
+     * @param array $credentials
+     * @param UserProvider $userProvider We know this will be our UserProvider
+     * @return mixed
+     */
     public function authenticate($credentials, UserProviderInterface $userProvider)
     {
         $token = $credentials['token'];
 
         // use pretending like the token is a real token
-        $user = $this->em->getRepository('AppBundle:User')
-            ->findOneBy(['username' => $token]);
+        $user = $userProvider->loadUserByToken($token);
 
         if (!$user) {
             throw new UsernameNotFoundException();
