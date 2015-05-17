@@ -101,39 +101,39 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
     }
 
     public function testReturnNullToSkipAuth()
-   {
-       $authenticatorA = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
-       $authenticatorB = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
-       $providerKey = 'my_firewall3';
+    {
+        $authenticatorA = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
+        $authenticatorB = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
+        $providerKey = 'my_firewall3';
 
-       $authenticatorA
-           ->expects($this->once())
-           ->method('getCredentialsFromRequest')
-           ->will($this->returnValue(null));
-       $authenticatorB
-           ->expects($this->once())
-           ->method('getCredentialsFromRequest')
-           ->will($this->returnValue(null));
+        $authenticatorA
+            ->expects($this->once())
+            ->method('getCredentialsFromRequest')
+            ->will($this->returnValue(null));
+        $authenticatorB
+            ->expects($this->once())
+            ->method('getCredentialsFromRequest')
+            ->will($this->returnValue(null));
 
-       // this is not called
-       $this->authenticationManager
-           ->expects($this->never())
-           ->method('authenticate');
+        // this is not called
+        $this->authenticationManager
+            ->expects($this->never())
+            ->method('authenticate');
 
-       $this->guardAuthenticatorHandler
-           ->expects($this->never())
-           ->method('handleAuthenticationSuccess');
+        $this->guardAuthenticatorHandler
+            ->expects($this->never())
+            ->method('handleAuthenticationSuccess');
 
-       $listener = new GuardAuthenticationListener(
-           $this->guardAuthenticatorHandler,
-           $this->authenticationManager,
-           $providerKey,
-           array($authenticatorA, $authenticatorB),
-           $this->logger
-       );
+        $listener = new GuardAuthenticationListener(
+            $this->guardAuthenticatorHandler,
+            $this->authenticationManager,
+            $providerKey,
+            array($authenticatorA, $authenticatorB),
+            $this->logger
+        );
 
-       $listener->handle($this->event);
-   }
+        $listener->handle($this->event);
+    }
 
     protected function setUp()
     {
