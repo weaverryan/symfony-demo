@@ -2,6 +2,8 @@
 
 namespace Symfony\Component\Security\Guard\Token;
 
+use Symfony\Component\Security\Core\Authentication\Token\AbstractToken;
+
 /**
  * The token used by the guard auth system before authentication
  *

@@ -12,8 +12,8 @@
 namespace Symfony\Component\Security\Guard\Tests\Firewall;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Http\Firewall\GuardAuthenticationListener;
-use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken;
+use Symfony\Component\Security\Guard\Firewall\GuardAuthenticationListener;
+use Symfony\Component\Security\Guard\Token\NonAuthenticatedGuardToken;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
@@ -26,7 +26,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
 
     public function testHandleSuccess()
     {
-        $authenticator = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+        $authenticator = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
         $authenticateToken = $this->getMock('Symfony\Component\Security\Core\Authentication\Token\TokenInterface');
         $providerKey = 'my_firewall';
 
@@ -70,7 +70,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
 
     public function testHandleCatchesAuthenticationException()
     {
-        $authenticator = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+        $authenticator = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
         $providerKey = 'my_firewall2';
 
         $authException = new AuthenticationException('Get outta here crazy user with a bad password!');
@@ -102,8 +102,8 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
 
     public function testReturnNullToSkipAuth()
    {
-       $authenticatorA = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
-       $authenticatorB = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+       $authenticatorA = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
+       $authenticatorB = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
        $providerKey = 'my_firewall3';
 
        $authenticatorA
@@ -141,7 +141,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->guardAuthenticatorHandler = $this->getMockBuilder('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorHandler')
+        $this->guardAuthenticatorHandler = $this->getMockBuilder('Symfony\Component\Security\Guard\GuardAuthenticatorHandler')
             ->disableOriginalConstructor()
             ->getMock();
 

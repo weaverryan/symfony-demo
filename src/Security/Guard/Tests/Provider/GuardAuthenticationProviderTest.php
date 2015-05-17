@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Security\Guard\Tests\Provider;
 
-use Symfony\Component\Security\Core\Authentication\Provider\GuardAuthenticationProvider;
+use Symfony\Component\Security\Guard\Provider\GuardAuthenticationProvider;
 
 class GuardAuthenticationProviderTest extends \PHPUnit_Framework_TestCase
 {
@@ -23,9 +23,9 @@ class GuardAuthenticationProviderTest extends \PHPUnit_Framework_TestCase
     {
         $providerKey = 'my_cool_firewall';
 
-        $authenticatorA = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
-        $authenticatorB = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
-        $authenticatorC = $this->getMock('Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface');
+        $authenticatorA = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
+        $authenticatorB = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
+        $authenticatorC = $this->getMock('Symfony\Component\Security\Guard\GuardAuthenticatorInterface');
         $authenticators = array($authenticatorA, $authenticatorB, $authenticatorC);
 
         // called 2 times - for authenticator A and B (stops on B because of match)
@@ -76,7 +76,7 @@ class GuardAuthenticationProviderTest extends \PHPUnit_Framework_TestCase
     {
         $this->userProvider = $this->getMock('Symfony\Component\Security\Core\User\UserProviderInterface');
         $this->userChecker = $this->getMock('Symfony\Component\Security\Core\User\UserCheckerInterface');
-        $this->nonAuthedToken = $this->getMockBuilder('Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken')
+        $this->nonAuthedToken = $this->getMockBuilder('Symfony\Component\Security\Guard\Token\NonAuthenticatedGuardToken')
             ->disableOriginalConstructor()
             ->getMock();
     }

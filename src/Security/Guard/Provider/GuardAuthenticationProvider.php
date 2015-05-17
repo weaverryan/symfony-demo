@@ -2,8 +2,9 @@
 
 namespace Symfony\Component\Security\Guard\Provider;
 
-use Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface;
-use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken;
+use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface;
+use Symfony\Component\Security\Guard\GuardAuthenticatorInterface;
+use Symfony\Component\Security\Guard\Token\NonAuthenticatedGuardToken;
 use Symfony\Component\Security\Core\User\UserCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;

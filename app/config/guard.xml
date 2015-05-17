@@ -6,7 +6,7 @@
 
     <services>
         <service id="security.authentication.guard_handler"
-                 class="Symfony\Component\Security\Core\Authentication\GuardAuthenticatorHandler"
+                 class="Symfony\Component\Security\Guard\GuardAuthenticatorHandler"
             >
             <argument type="service" id="security.token_storage" />
             <argument type="service" id="event_dispatcher" on-invalid="null" />
@@ -14,7 +14,7 @@
 
         <!-- See GuardAuthenticationFactory -->
         <service id="security.authentication.provider.guard"
-                 class="Symfony\Component\Security\Core\Authentication\Provider\GuardAuthenticationProvider"
+                 class="Symfony\Component\Security\Guard\Provider\GuardAuthenticationProvider"
                  abstract="true"
                  public="false"
             >
@@ -25,7 +25,7 @@
         </service>
 
         <service id="security.authentication.listener.guard"
-                 class="Symfony\Component\Security\Http\Firewall\GuardAuthenticationListener"
+                 class="Symfony\Component\Security\Guard\Firewall\GuardAuthenticationListener"
                  public="false"
                  abstract="true"
             >

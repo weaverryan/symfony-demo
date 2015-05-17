@@ -46,7 +46,8 @@ class GuardAuthenticationFactoryTest extends \PHPUnit_Framework_TestCase
 
         $node = $nodeDefinition->getNode();
         $normalizedConfig = $node->normalize($inputConfig);
-        $finalizedConfig = $node->finalize($normalizedConfig);
+        // will validate and throw an exception on invalid
+        $node->finalize($normalizedConfig);
     }
 
     public function getValidConfigurationTests()
