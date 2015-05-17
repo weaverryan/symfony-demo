@@ -125,7 +125,7 @@ class GuardAuthenticationListener implements ListenerInterface
         }
 
         // attempt to trigger the remember me functionality
-        $this->triggerRememberMe($guardAuthenticator, $request, $response, $token);
+        $this->triggerRememberMe($guardAuthenticator, $request, $token, $response);
     }
 
     /**
@@ -144,10 +144,10 @@ class GuardAuthenticationListener implements ListenerInterface
      *
      * @param GuardAuthenticatorInterface $guardAuthenticator
      * @param Request $request
-     * @param Response $response
      * @param TokenInterface $token
+     * @param Response $response
      */
-    private function triggerRememberMe(GuardAuthenticatorInterface $guardAuthenticator, Request $request, Response $response, TokenInterface $token)
+    private function triggerRememberMe(GuardAuthenticatorInterface $guardAuthenticator, Request $request, TokenInterface $token, Response $response = null)
     {
         if (!$guardAuthenticator->supportsRememberMe()) {
             return;
