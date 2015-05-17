@@ -5,18 +5,17 @@ namespace AppBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 use Symfony\Component\Security\Guard\GuardAuthenticatorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\Security;
 
-class FormLoginAuthenticator implements GuardAuthenticatorInterface
+class FormLoginAuthenticator extends AbstractGuardAuthenticator
 {
     private $passwordEncoder;
 
@@ -61,16 +60,6 @@ class FormLoginAuthenticator implements GuardAuthenticatorInterface
         }
 
         return $user;
-    }
-
-    public function createAuthenticatedToken(UserInterface $user, $providerKey)
-    {
-        return new UsernamePasswordToken(
-            $user,
-            $user->getPassword(),
-            $providerKey,
-            $user->getRoles()
-        );
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)

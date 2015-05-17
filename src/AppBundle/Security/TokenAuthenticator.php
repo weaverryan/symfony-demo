@@ -5,6 +5,7 @@ namespace AppBundle\Security;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 use Symfony\Component\Security\Guard\GuardAuthenticatorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\PreAuthenticatedToken;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -16,7 +17,7 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 /**
  * Example authenticator that reads from a header
  */
-class TokenAuthenticator implements GuardAuthenticatorInterface
+class TokenAuthenticator extends AbstractGuardAuthenticator
 {
     private $em;
 
@@ -52,16 +53,6 @@ class TokenAuthenticator implements GuardAuthenticatorInterface
         }
 
         return $user;
-    }
-
-    public function createAuthenticatedToken(UserInterface $user, $providerKey)
-    {
-        return new PreAuthenticatedToken(
-            $user,
-            null,
-            $providerKey,
-            $user->getRoles()
-        );
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
