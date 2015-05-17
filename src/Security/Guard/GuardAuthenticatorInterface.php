@@ -1,6 +1,6 @@
 <?php
 
-namespace Symfony\Component\Security\Core\Authentication;
+namespace Symfony\Component\Security\Guard;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

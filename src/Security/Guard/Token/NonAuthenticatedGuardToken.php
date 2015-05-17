@@ -1,6 +1,6 @@
 <?php
 
-namespace Symfony\Component\Security\Core\Authentication\Token;
+namespace Symfony\Component\Security\Guard\Token;
 
 /**
  * The token used by the guard auth system before authentication

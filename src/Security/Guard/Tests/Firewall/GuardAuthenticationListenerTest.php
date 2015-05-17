@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Security\Http\Tests\Firewall;
+namespace Symfony\Component\Security\Guard\Tests\Firewall;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Firewall\GuardAuthenticationListener;

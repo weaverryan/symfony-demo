@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Security\Core\Tests\Authentication\Provider;
+namespace Symfony\Component\Security\Guard\Tests\Provider;
 
 use Symfony\Component\Security\Core\Authentication\Provider\GuardAuthenticationProvider;
 

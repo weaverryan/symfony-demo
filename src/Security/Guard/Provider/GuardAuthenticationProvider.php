@@ -1,6 +1,6 @@
 <?php
 
-namespace Symfony\Component\Security\Core\Authentication\Provider;
+namespace Symfony\Component\Security\Guard\Provider;
 
 use Symfony\Component\Security\Core\Authentication\GuardAuthenticatorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\NonAuthenticatedGuardToken;

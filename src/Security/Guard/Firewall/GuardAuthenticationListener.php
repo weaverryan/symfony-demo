@@ -1,6 +1,6 @@
 <?php
 
-namespace Symfony\Component\Security\Http\Firewall;
+namespace Symfony\Component\Security\Guard\Firewall;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
