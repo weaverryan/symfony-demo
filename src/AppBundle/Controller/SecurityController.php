@@ -57,8 +57,8 @@ class SecurityController extends Controller
 
         $successResponse = $guardHandler->authenticateUserAndHandleSuccess(
             $user,
-            $authenticator,
             $request,
+            $authenticator,
             $firewallKey
         );
 

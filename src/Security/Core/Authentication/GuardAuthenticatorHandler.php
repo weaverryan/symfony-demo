@@ -70,12 +70,12 @@ class GuardAuthenticatorHandler
      * Response *if any* for success
      *
      * @param UserInterface $user
-     * @param GuardAuthenticatorInterface $authenticator
      * @param Request $request
+     * @param GuardAuthenticatorInterface $authenticator
      * @param $providerKey
      * @return Response|null
      */
-    public function authenticateUserAndHandleSuccess(UserInterface $user, GuardAuthenticatorInterface $authenticator, Request $request, $providerKey)
+    public function authenticateUserAndHandleSuccess(UserInterface $user, Request $request, GuardAuthenticatorInterface $authenticator, $providerKey)
     {
         // create an authenticated token for the User
         $token = $authenticator->createAuthenticatedToken($user, $providerKey);
