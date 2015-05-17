@@ -110,7 +110,7 @@ class GuardAuthenticationListener implements ListenerInterface
         }
 
         // success!
-        $response = $this->guardHandler->handleAuthenticationSuccess($guardAuthenticator, $request, $token, $this->providerKey);
+        $response = $this->guardHandler->handleAuthenticationSuccess($token, $request, $guardAuthenticator, $this->providerKey);
         if ($response instanceof Response) {
             if (null !== $this->logger) {
                 $this->logger->info('Guard authenticator set success response', array('response' => $response, 'authenticator' => get_class($guardAuthenticator)));

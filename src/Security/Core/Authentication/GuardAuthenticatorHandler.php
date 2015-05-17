@@ -43,13 +43,13 @@ class GuardAuthenticatorHandler
     /**
      * Returns the "on success" response for the given GuardAuthenticator
      *
-     * @param GuardAuthenticatorInterface $guardAuthenticator
-     * @param Request $request
      * @param TokenInterface $token
+     * @param Request $request
+     * @param GuardAuthenticatorInterface $guardAuthenticator
      * @param $providerKey
      * @return null|Response
      */
-    public function handleAuthenticationSuccess(GuardAuthenticatorInterface $guardAuthenticator, Request $request, TokenInterface $token, $providerKey)
+    public function handleAuthenticationSuccess(TokenInterface $token, Request $request, GuardAuthenticatorInterface $guardAuthenticator, $providerKey)
     {
         $response = $guardAuthenticator->onAuthenticationSuccess($request, $token, $providerKey);
 
@@ -83,7 +83,7 @@ class GuardAuthenticatorHandler
         $this->authenticateWithToken($token, $request);
 
         // return the success metric
-        return $this->handleAuthenticationSuccess($authenticator, $request, $token, $providerKey);
+        return $this->handleAuthenticationSuccess($token, $request, $authenticator, $providerKey);
     }
 
     /**

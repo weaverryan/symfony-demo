@@ -55,7 +55,7 @@ class GuardAuthenticationListenerTest extends \PHPUnit_Framework_TestCase
         $this->guardAuthenticatorHandler
             ->expects($this->once())
             ->method('handleAuthenticationSuccess')
-            ->with($authenticator, $this->request, $authenticateToken, $providerKey);
+            ->with($authenticateToken, $this->request, $authenticator, $providerKey);
 
         $listener = new GuardAuthenticationListener(
             $this->guardAuthenticatorHandler,
