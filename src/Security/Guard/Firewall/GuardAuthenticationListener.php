@@ -33,7 +33,7 @@ class GuardAuthenticationListener implements ListenerInterface
      * @param GuardAuthenticatorHandler       $guardHandler          The Guard handler
      * @param AuthenticationManagerInterface  $authenticationManager An AuthenticationManagerInterface instance
      * @param string                          $providerKey           The provider (i.e. firewall) key
-     * @param GuardAuthenticatorInterface[]   $guardAuthenticators   The GuardAuthenticatorInterface instances
+     * @param GuardAuthenticatorInterface[]   $guardAuthenticators   The authenticators, with keys that match what's passed to GuardAuthenticationProvider
      * @param LoggerInterface                 $logger                A LoggerInterface instance
      */
     public function __construct(GuardAuthenticatorHandler $guardHandler, AuthenticationManagerInterface $authenticationManager, $providerKey, $guardAuthenticators, LoggerInterface $logger = null)

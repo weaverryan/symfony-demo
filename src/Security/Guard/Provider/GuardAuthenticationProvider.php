@@ -27,7 +27,7 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
     private $userChecker;
 
     /**
-     * @param GuardAuthenticatorInterface[] $guardAuthenticators    The GuardAuthenticatorInterface instances
+     * @param GuardAuthenticatorInterface[] $guardAuthenticators    The authenticators, with keys that match what's passed to GuardAuthenticationListener
      * @param UserProviderInterface         $userProvider           The user provider
      * @param string                        $providerKey            The provider (i.e. firewall) key
      * @param UserCheckerInterface $userChecker
