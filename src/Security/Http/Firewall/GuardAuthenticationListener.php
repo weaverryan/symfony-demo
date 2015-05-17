@@ -100,7 +100,7 @@ class GuardAuthenticationListener implements ListenerInterface
                 $this->logger->info('Guard authentication failed.', array('exception' => $e, 'authenticator' => get_class($guardAuthenticator)));
             }
 
-            $response = $this->guardHandler->handleAuthenticationFailure($guardAuthenticator, $e, $request);
+            $response = $this->guardHandler->handleAuthenticationFailure($e, $guardAuthenticator, $request);
 
             if ($response instanceof Response) {
                 $event->setResponse($response);

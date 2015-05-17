@@ -90,12 +90,12 @@ class GuardAuthenticatorHandler
      * Handles an authentication failure and returns the Response for the
      * GuardAuthenticator
      *
-     * @param GuardAuthenticatorInterface $guardAuthenticator
      * @param AuthenticationException $authenticationException
+     * @param GuardAuthenticatorInterface $guardAuthenticator
      * @param Request $request
      * @return null|Response
      */
-    public function handleAuthenticationFailure(GuardAuthenticatorInterface $guardAuthenticator, AuthenticationException $authenticationException, Request $request)
+    public function handleAuthenticationFailure(AuthenticationException $authenticationException, GuardAuthenticatorInterface $guardAuthenticator, Request $request)
     {
         $this->tokenStorage->setToken(null);
 
