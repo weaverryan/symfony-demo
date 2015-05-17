@@ -2,7 +2,6 @@
 
 namespace AppBundle\Security;
 
-use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
@@ -16,13 +15,6 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
  */
 class TokenAuthenticator extends AbstractGuardAuthenticator
 {
-    private $em;
-
-    public function __construct(EntityManager $em)
-    {
-        $this->em = $em;
-    }
-
     public function getCredentialsFromRequest(Request $request)
     {
         $token = $request->headers->get('X-AUTH-TOKEN');
