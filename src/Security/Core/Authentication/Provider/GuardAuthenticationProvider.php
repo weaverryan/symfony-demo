@@ -73,16 +73,16 @@ class GuardAuthenticationProvider implements AuthenticationProviderInterface
         $this->userChecker->checkPreAuth($user);;
         $this->userChecker->checkPostAuth($user);
 
-        $token = $guardAuthenticator->createAuthenticatedToken($user, $this->providerKey);
-        if (!$token instanceof TokenInterface) {
+        $authenticatedToken = $guardAuthenticator->createAuthenticatedToken($user, $this->providerKey);
+        if (!$authenticatedToken instanceof TokenInterface) {
             throw new \UnexpectedValueException(sprintf(
                 'The %s::createAuthenticatedToken method must return a TokenInterface. You returned %s',
                 get_class($guardAuthenticator),
-                is_object($token) ? get_class($token) : gettype($token)
+                is_object($authenticatedToken) ? get_class($authenticatedToken) : gettype($authenticatedToken)
             ));
         }
 
-        return $token;
+        return $authenticatedToken;
     }
 
     public function supports(TokenInterface $token)
