@@ -8,10 +8,8 @@
         <service id="security.authentication.guard_handler"
                  class="Symfony\Component\Security\Core\Authentication\GuardAuthenticatorHandler"
             >
-            <tag name="monolog.logger" channel="security" />
             <argument type="service" id="security.token_storage" />
             <argument type="service" id="event_dispatcher" on-invalid="null" />
-            <argument type="service" id="logger" on-invalid="null" />
         </service>
 
         <!-- See GuardAuthenticationFactory -->
