@@ -91,11 +91,11 @@ class GuardAuthenticatorHandler
      * GuardAuthenticator
      *
      * @param AuthenticationException $authenticationException
-     * @param GuardAuthenticatorInterface $guardAuthenticator
      * @param Request $request
+     * @param GuardAuthenticatorInterface $guardAuthenticator
      * @return null|Response
      */
-    public function handleAuthenticationFailure(AuthenticationException $authenticationException, GuardAuthenticatorInterface $guardAuthenticator, Request $request)
+    public function handleAuthenticationFailure(AuthenticationException $authenticationException, Request $request, GuardAuthenticatorInterface $guardAuthenticator)
     {
         $this->tokenStorage->setToken(null);
 
