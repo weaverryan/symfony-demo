@@ -15,7 +15,7 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
  */
 class TokenAuthenticator extends AbstractGuardAuthenticator
 {
-    public function getCredentialsFromRequest(Request $request)
+    public function getCredentials(Request $request)
     {
         $token = $request->headers->get('X-AUTH-TOKEN');
 

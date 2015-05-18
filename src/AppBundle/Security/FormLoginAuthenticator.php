@@ -26,7 +26,7 @@ class FormLoginAuthenticator extends AbstractGuardAuthenticator
         $this->router = $router;
     }
 
-    public function getCredentialsFromRequest(Request $request)
+    public function getCredentials(Request $request)
     {
         if ($request->getPathInfo() != '/login_check' || !$request->isMethod('POST')) {
             return;
