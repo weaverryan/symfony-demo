@@ -5,6 +5,7 @@ namespace AppBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Exception\AuthenticationCredentialsNotFoundException;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
@@ -29,18 +30,25 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
         ];
     }
 
-    public function authenticate($credentials, UserProviderInterface $userProvider)
+    public function getUser($credentials, UserProviderInterface $userProvider)
     {
         $token = $credentials['token'];
 
-        // call a method on your UserProvider - see below for details
+        // this authenticator is configured to always receive our UserProvider
+        /** @var UserProvider $userProvider */
         $user = $userProvider->loadUserByToken($token);
 
+        // we could just return null, but this allows us to control the message a bit more
         if (!$user) {
             throw new AuthenticationCredentialsNotFoundException();
         }
 
         return $user;
+    }
+
+    public function checkCredentials($credentials, UserInterface $user)
+    {
+        // we're saying that the token is *always* ok
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)

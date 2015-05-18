@@ -5,6 +5,7 @@ namespace AppBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
@@ -41,24 +42,22 @@ class FormLoginAuthenticator extends AbstractGuardAuthenticator
         ];
     }
 
-    public function authenticate($credentials, UserProviderInterface $userProvider)
+    public function getUser($credentials, UserProviderInterface $userProvider)
     {
         $username = $credentials['username'];
-        $password = $credentials['password'];
-        $user = $userProvider->loadUserByUsername(
+
+        return $userProvider->loadUserByUsername(
             $username
         );
+    }
 
-        if (!$user) {
-            throw new UsernameNotFoundException();
-        }
-
+    public function checkCredentials($credentials, UserInterface $user)
+    {
+        $password = $credentials['password'];
         $passwordValid = $this->passwordEncoder->isPasswordValid($user, $password);
         if (!$passwordValid) {
             throw new BadCredentialsException();
         }
-
-        return $user;
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
