@@ -90,14 +90,3 @@
 
     {{ show_source_code(_self) }}
 {% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-
-    <script>
-        $(document).ready(function() {
-            $('#username').val('anna_admin');
-            $('#password').val('kitten');
-        });
-    </script>
-{% endblock %}

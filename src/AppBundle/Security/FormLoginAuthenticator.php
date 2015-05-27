@@ -36,6 +36,8 @@ class FormLoginAuthenticator extends AbstractGuardAuthenticator
         $username = $request->request->get('_username');
         $password = $request->request->get('_password');
 
+        $request->getSession()->set(Security::LAST_USERNAME, $username);
+
         return [
             'username' => $username,
             'password' => $password
@@ -62,6 +64,9 @@ class FormLoginAuthenticator extends AbstractGuardAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
     {
+        $request->getSession()->remove(Security::AUTHENTICATION_ERROR);
+        $request->getSession()->remove(Security::LAST_USERNAME);
+
         $targetPath = $request->getSession()->get('_security.'.$providerKey.'.target_path');
 
         if (!$targetPath) {
