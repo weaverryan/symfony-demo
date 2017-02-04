@@ -7,6 +7,17 @@
  * file that was distributed with this source code.
  */
 
+import '../css/requiredInJsFile.css';
+//import '../css/requiredInJsFile.less';
+
+console.log('JS loading!');
+
+import './imported-js';
+//import './imported-js2';
+require.ensure([], function(require) {
+    require('./split-chunk');
+});
+
 require('jquery');
 require('bootstrap-sass/assets/javascripts/bootstrap/modal.js');
 require('bootstrap-sass/assets/javascripts/bootstrap/collapse.js');
@@ -19,7 +30,6 @@ require('eonasdan-bootstrap-datetimepicker');
 var hljs = require('highlight.js/lib/highlight.js');
 hljs.registerLanguage('php', require('highlight.js/lib/languages/php.js'));
 hljs.registerLanguage('twig', require('highlight.js/lib/languages/twig.js'));
-module.exports = hljs;
 
 // Needed to fix a Bootstrap DateTimePicker problem. It may be an ugly solution,
 // but it's the only one that worked for us.

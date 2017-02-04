@@ -1,3 +1,6 @@
+body {
+  background: lightblue !important;
+}
 @font-face {
   font-family: 'Lato';
   font-style: normal;

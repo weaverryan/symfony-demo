@@ -12,6 +12,7 @@
 namespace AppBundle\Twig;
 
 use AppBundle\Utils\Markdown;
+use Symfony\Component\Asset\Packages;
 use Symfony\Component\Intl\Intl;
 
 /**

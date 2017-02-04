@@ -1,0 +1,1 @@
+console.log('normal, imported JS 2');

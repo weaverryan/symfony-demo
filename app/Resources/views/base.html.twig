@@ -11,7 +11,8 @@
         <title>{% block title %}Symfony Demo application{% endblock %}</title>
         <link rel="alternate" type="application/rss+xml" title="{{ 'rss.title'|trans }}" href="{{ path('blog_rss') }}">
         {% block stylesheets %}
-            <link rel="stylesheet" href="{{ asset('/css/app.css') }}">
+            <link rel="stylesheet" href="{{ asset('/build/app.css') }}">
+            <link rel="stylesheet" href="{{ asset('/build/styles.css') }}">
         {% endblock %}
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
@@ -131,7 +132,9 @@
         {% endblock %}
 
         {% block javascripts %}
-            <script src="{{ asset('/js/app.js') }}"></script>
+            <script src="{{ asset('/build/manifest.js') }}"></script>
+            <script src="{{ asset('/build/vendor.js') }}"></script>
+            <script src="{{ asset('/build/app.js') }}"></script>
         {% endblock %}
 
         {# it's not mandatory to set the timezone in localizeddate(). This is done to
