@@ -48,7 +48,7 @@ framework:
     fragments:       ~
     http_method_override: true
     assets:
-        #base_url: http://localhost:8080
+        json_manifest_path: '%kernel.root_dir%/../web/build/manifest.json'
 
 # Twig Configuration (used for rendering application templates)
 twig:

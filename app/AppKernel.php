@@ -1,5 +1,6 @@
 <?php
 
+use Symfony\Bundle\WebServerBundle\WebServerBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\HttpKernel\Kernel;
 
@@ -23,6 +24,7 @@ class AppKernel extends Kernel
             new AppBundle\AppBundle(),
             new Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle(), // used for initial population of non-SQLite databases in production envs
             new Symfony\Bundle\SwiftmailerBundle\SwiftmailerBundle(),
+            new WebServerBundle(),
         ];
 
         // Some bundles are only used while developing the application or during
