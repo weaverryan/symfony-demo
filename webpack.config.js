@@ -18,7 +18,7 @@ Remix
         './app/Resources/assets/css/font-lato.css',
         './app/Resources/assets/css/highlight-solarized-light.css'
     ])
-    .enablePostCss()
+    //.enablePostCss()
     .autoProvidejQuery()
     .cleanupOutputBeforeBuild()
 ;
