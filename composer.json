@@ -33,10 +33,12 @@
     "require-dev": {
         "dama/doctrine-test-bundle": "^4.0",
         "friendsofphp/php-cs-fixer": "^2.7",
+        "nikic/php-parser": "@beta",
         "symfony/browser-kit": "^4.0",
         "symfony/css-selector": "^4.0",
         "symfony/debug-bundle": "^4.0",
         "symfony/dotenv": "^4.0",
+        "symfony/maker-bundle": "dev-make-entity-improved",
         "symfony/phpunit-bridge": "^4.0",
         "symfony/stopwatch": "^4.0",
         "symfony/web-profiler-bundle": "^4.0",
@@ -76,5 +78,11 @@
             "id": "01BY8QJHBGTYRP06WQFNY99EKP",
             "allow-contrib": true
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/weaverryan/maker-bundle"
+        }
+    ]
 }
