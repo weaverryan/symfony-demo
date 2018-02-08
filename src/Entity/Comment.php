@@ -91,7 +91,7 @@ class Comment
         return !$containsInvalidCharacters;
     }
 
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -101,27 +101,27 @@ class Comment
         return $this->content;
     }
 
-    public function setContent(string $content): void
+    public function setContent(string $content)
     {
         $this->content = $content;
     }
 
-    public function getPublishedAt(): \DateTime
+    public function getPublishedAt(): ?\DateTimeInterface
     {
         return $this->publishedAt;
     }
 
-    public function setPublishedAt(\DateTime $publishedAt): void
+    public function setPublishedAt(\DateTimeInterface $publishedAt)
     {
         $this->publishedAt = $publishedAt;
     }
 
-    public function getAuthor(): User
+    public function getAuthor(): ?User
     {
         return $this->author;
     }
 
-    public function setAuthor(User $author): void
+    public function setAuthor(?User $author)
     {
         $this->author = $author;
     }
@@ -131,7 +131,7 @@ class Comment
         return $this->post;
     }
 
-    public function setPost(?Post $post): void
+    public function setPost(?Post $post)
     {
         $this->post = $post;
     }

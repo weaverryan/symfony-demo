@@ -128,7 +128,7 @@ class Post
         $this->tags = new ArrayCollection();
     }
 
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -138,7 +138,7 @@ class Post
         return $this->title;
     }
 
-    public function setTitle(?string $title): void
+    public function setTitle(string $title)
     {
         $this->title = $title;
     }
@@ -148,7 +148,7 @@ class Post
         return $this->slug;
     }
 
-    public function setSlug(?string $slug): void
+    public function setSlug(string $slug)
     {
         $this->slug = $slug;
     }
@@ -158,48 +158,60 @@ class Post
         return $this->content;
     }
 
-    public function setContent(?string $content): void
+    public function setContent(string $content)
     {
         $this->content = $content;
     }
 
-    public function getPublishedAt(): \DateTime
+    public function getPublishedAt(): ?\DateTimeInterface
     {
         return $this->publishedAt;
     }
 
-    public function setPublishedAt(?\DateTime $publishedAt): void
+    public function setPublishedAt(\DateTimeInterface $publishedAt)
     {
         $this->publishedAt = $publishedAt;
     }
 
-    public function getAuthor(): User
+    public function getAuthor(): ?User
     {
         return $this->author;
     }
 
-    public function setAuthor(?User $author): void
+    public function setAuthor(?User $author)
     {
         $this->author = $author;
     }
 
+    /**
+     * @return Collection|Comment[]
+     */
     public function getComments(): Collection
     {
         return $this->comments;
     }
 
-    public function addComment(?Comment $comment): void
+    public function addComment(Comment $comment)
     {
-        $comment->setPost($this);
-        if (!$this->comments->contains($comment)) {
-            $this->comments->add($comment);
+        if ($this->comments->contains($comment)) {
+            return;
         }
+
+        $this->comments[] = $comment;
+        $comment->setPost($this);
     }
 
-    public function removeComment(Comment $comment): void
+    public function removeComment(Comment $comment)
     {
-        $comment->setPost(null);
+        if (!$this->comments->contains($comment)) {
+            return;
+        }
+
         $this->comments->removeElement($comment);
+        // set the owning side to null (unless already changed)
+        if ($comment->getPost() === $this) {
+            $comment->setPost(null);
+        }
     }
 
     public function getSummary(): ?string
@@ -207,25 +219,32 @@ class Post
         return $this->summary;
     }
 
-    public function setSummary(?string $summary): void
+    public function setSummary(string $summary)
     {
         $this->summary = $summary;
     }
 
-    public function addTag(?Tag ...$tags): void
+    public function addTag(Tag $tag)
     {
-        foreach ($tags as $tag) {
-            if (!$this->tags->contains($tag)) {
-                $this->tags->add($tag);
-            }
+        if ($this->tags->contains($tag)) {
+            return;
         }
+
+        $this->tags[] = $tag;
     }
 
-    public function removeTag(Tag $tag): void
+    public function removeTag(Tag $tag)
     {
+        if (!$this->tags->contains($tag)) {
+            return;
+        }
+
         $this->tags->removeElement($tag);
     }
 
+    /**
+     * @return Collection|Tag[]
+     */
     public function getTags(): Collection
     {
         return $this->tags;
