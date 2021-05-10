@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.8.1",
+    "@symfony/ux-turbo": "file:vendor/symfony/ux-turbo/Resources/assets",
     "@symfony/webpack-encore": "^1.0.0",
     "bloodhound-js": "^1.2.3",
     "bootstrap-sass": "^3.3.7",
