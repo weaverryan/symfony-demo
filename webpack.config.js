@@ -31,6 +31,7 @@ Encore
         useBuiltIns: 'usage',
         corejs: 3,
     })
+    .enableStimulusBridge('./assets/controllers.json')
 ;
 
 module.exports = Encore.getWebpackConfig();

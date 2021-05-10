@@ -3,29 +3,30 @@
     "app": {
       "js": [
         "/build/runtime.js",
-        "/build/755.js",
-        "/build/498.js",
-        "/build/898.js",
+        "/build/vendors-node_modules_jquery_dist_jquery_js.js",
+        "/build/vendors-node_modules_core-js_internals_add-to-unscopables_js-node_modules_core-js_internals_a-88c411.js",
+        "/build/vendors-node_modules_core-js_modules_es_object_to-string_js-node_modules_core-js_modules_es_s-6da655.js",
+        "/build/vendors-node_modules_symfony_stimulus-bridge_dist_index_js-node_modules_symfony_ux-turbo_dist-dcf0e3.js",
         "/build/app.js"
       ],
       "css": [
-        "/build/898.css",
+        "/build/vendors-node_modules_symfony_stimulus-bridge_dist_index_js-node_modules_symfony_ux-turbo_dist-dcf0e3.css",
         "/build/app.css"
       ]
     },
     "login": {
       "js": [
         "/build/runtime.js",
-        "/build/755.js",
+        "/build/vendors-node_modules_jquery_dist_jquery_js.js",
         "/build/login.js"
       ]
     },
     "admin": {
       "js": [
         "/build/runtime.js",
-        "/build/755.js",
-        "/build/498.js",
-        "/build/919.js",
+        "/build/vendors-node_modules_jquery_dist_jquery_js.js",
+        "/build/vendors-node_modules_core-js_internals_add-to-unscopables_js-node_modules_core-js_internals_a-88c411.js",
+        "/build/vendors-node_modules_bootstrap-tagsinput_dist_bootstrap-tagsinput_js-node_modules_core-js_mod-c78b2d.js",
         "/build/admin.js"
       ],
       "css": [
@@ -35,26 +36,11 @@
     "search": {
       "js": [
         "/build/runtime.js",
-        "/build/755.js",
-        "/build/498.js",
-        "/build/95.js",
+        "/build/vendors-node_modules_jquery_dist_jquery_js.js",
+        "/build/vendors-node_modules_core-js_internals_add-to-unscopables_js-node_modules_core-js_internals_a-88c411.js",
+        "/build/vendors-node_modules_core-js_modules_es_object_to-string_js-node_modules_core-js_modules_es_s-6da655.js",
         "/build/search.js"
       ]
     }
-  },
-  "integrity": {
-    "/build/runtime.js": "sha384-LGUzcv/u58hbJTwIgsiGB/+kbvZY2rrdKxyYHjiS/TT/2UbOwNmKDfPG5JkuZEcA",
-    "/build/755.js": "sha384-4MYMZniXIRPqLVJUVyKAowCdafqir8xjNquZ2Yy3WktmX4DMP+ixroqxngX75OM+",
-    "/build/498.js": "sha384-U4bCKDcTlgFM/TdYzGWvgD1bgtwNo4u0wkTy+Tup+mTI/CdQP18mDHFS0R/VvOnJ",
-    "/build/898.js": "sha384-OnjKouBODzD9/crggoPTikmdtgyXCXeecy/wjhoQutUmdIpXbX5B3vB1ZuGZ+iKo",
-    "/build/app.js": "sha384-jjZLbzvSKmoBmXqY1vDqNgq79is91tl5smcQoLNCGRNxz4+Xo5mBoCE8WNE8lL65",
-    "/build/898.css": "sha384-qYTrnlR1dBnyxrZ1B5pKAhu/MGDmbbKCuCHU+aR8gD7atCz3yGlsGCtN72CmPfA0",
-    "/build/app.css": "sha384-uOS5EZrgjw0JYY0ZaUnljD/zjXkAXWT/gk3vcq+eXprn/Imd59BiNFBz42T3bs03",
-    "/build/login.js": "sha384-nShP7wwZRsIzB2f7ER54pWV+dxkf5KpqRwNfR+P9clV8MrBiJpnc62FN66ae37Jw",
-    "/build/919.js": "sha384-lYDoGdrLxKHEf5HeDr35l/V3649MiUGHTpcgG3pbBzLYe6MnmJuf7BeqPQPsaE69",
-    "/build/admin.js": "sha384-fX6HTZq+acpT62YAdkmBkrPu2k3M2PC325+1FJjlG+efh4Hlg3q/EJb92WVLlh61",
-    "/build/admin.css": "sha384-ilLLAgcQxfeIVl6jV3AsZ2jmrWwgECQptl9HYwqc2NpYuTl6FEW46DBpDk5Q76sp",
-    "/build/95.js": "sha384-US7V+74/OnZN0CQJkCt5FOfoT/eL6optXUPqZbenDK48Vl+GVBQFQGxzM1FhKwaB",
-    "/build/search.js": "sha384-ujLhRXZ+3Ccy+BkBb33tzGWF5yYKQ4oECSfbkr111xeCKOhVh+1a11bvjkoMEmk9"
   }
 }

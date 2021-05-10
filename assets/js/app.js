@@ -13,3 +13,4 @@ import './highlight.js';
 
 // Creates links to the Symfony documentation
 import './doclinks.js';
+import './../bootstrap';
